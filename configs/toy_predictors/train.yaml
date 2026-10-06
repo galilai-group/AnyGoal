@@ -1,0 +1,61 @@
+defaults:
+  - data: pusht
+  - model: adaln
+  - launcher: local
+  - override hydra/job_logging: disabled
+  - _self_
+
+seed: 3072
+history_size: 3
+num_preds: 1
+train_split: 0.9
+
+resume:
+  checkpoint_path: null
+  run_directory: null
+
+extra_validation_sets: ${data.extra_validation_sets}
+
+loader:
+  batch_size: 256
+  num_workers: 6
+  persistent_workers: true
+  prefetch_factor: 3
+  pin_memory: true
+
+validation_loader:
+  batch_size: 512
+  num_workers: 0
+  pin_memory: true
+
+optimizer:
+  type: AdamW
+  lr: 3e-4
+  weight_decay: 1.0e-3
+
+scheduler:
+  type: LinearWarmupCosineAnnealingLR
+
+trainer:
+  max_epochs: 100
+  devices: auto
+  accelerator: gpu
+  precision: bf16
+  gradient_clip_val: 1.0
+  log_every_n_steps: 10
+
+output:
+  checkpoint_root: ~/.cache/anygoal/checkpoints/toy_predictors
+  save_every_n_epochs: 1
+
+wandb:
+  enabled: true
+  config:
+    entity: ${oc.env:WANDB_ENTITY,null}
+    project: ${oc.env:WANDB_PROJECT,anygoal-toy-predictors}
+    name: ${data.name}_${model.name}
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null

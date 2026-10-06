@@ -1,0 +1,55 @@
+[project]
+name = "anygoal"
+version = "0.1.0"
+description = "Benchmarking state-action recombination in world models"
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+    "stable-worldmodel>=0.1.1,<0.2.0",
+    "h5py",
+    "hdf5plugin",
+    "numpy",
+    "scipy",
+    "tqdm",
+    "PyYAML>=6",
+]
+
+[project.scripts]
+anygoal = "anygoal.cli:main"
+
+[project.optional-dependencies]
+env = [
+    "stable-worldmodel[env,format]>=0.1.1,<0.2.0",
+]
+
+train = [
+    "stable-worldmodel[train,format]>=0.1.1,<0.2.0",
+]
+
+paper = [
+    "stable-worldmodel[train,env,format]>=0.1.1,<0.2.0",
+    "transformers==5.15.1",
+    "pandas",
+    "matplotlib",
+    "seaborn",
+    "scikit-learn",
+    "wandb",
+    "jupyter",
+]
+
+analysis = [
+    "imageio>=2.31",
+    "matplotlib",
+]
+
+dev = [
+    "pytest",
+    "ruff",
+    "build",
+    "twine",
+]
+
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"

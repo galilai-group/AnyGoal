@@ -1,0 +1,53 @@
+model:
+  source_root: ${oc.env:SENSORIMOTOR_SOURCE_ROOT,worldmodels/sensorimotor-world-model/planning}
+  checkpoint_root: ~/.cache/anygoal/checkpoints/sensorimotor
+  run_name: tworoom_inverse_lambda_0p1_seed0
+
+dataset:
+  root: ${oc.env:SENSORIMOTOR_DATA_ROOT,'~/.stable_worldmodel'}
+  keys_to_cache: [action, proprio]
+
+world:
+  env_name: anygoal/TwoRoom-Tri-v1
+  max_episode_steps: 100
+
+seed:
+  task_base: 0
+  policy_base: 0
+
+plan_config:
+  horizon: 5
+  receding_horizon: 5
+  action_block: 5
+
+solver:
+  batch_size: 1
+  num_samples: 300
+  var_scale: 1.0
+  n_steps: 30
+  topk: 30
+
+eval:
+  seeds: [0, 1, 2]
+  num_eval: 50
+  goal_offset_steps: 25
+  eval_budget: 50
+  img_size: 224
+  dataset_name: tworoom_route_test
+  save_video: false
+  reverse: false
+  early_agent_moving: false
+  early_agent_moving_block_threshold: 30.0
+  early_agent_moving_stationary_eps: 1.0e-6
+  callables:
+    - method: _set_state
+      args:
+        state:
+          value: proprio
+    - method: _set_goal_state
+      args:
+        goal_state:
+          value: goal_proprio
+
+output:
+  directory: outputs/planning_tworoom_triangle/sensorimotor

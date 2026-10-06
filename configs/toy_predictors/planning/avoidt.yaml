@@ -1,0 +1,12 @@
+defaults:
+  - pusht
+  - _self_
+
+world:
+  env_name: anygoal/AvoidT-v1
+
+eval:
+  dataset_name: avoidt_test
+
+output:
+  filename: avoidt_toy_results.txt

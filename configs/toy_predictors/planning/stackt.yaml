@@ -1,0 +1,12 @@
+defaults:
+  - pusht
+  - _self_
+
+world:
+  env_name: anygoal/StackT-v2
+
+eval:
+  dataset_name: stackt_test
+
+output:
+  filename: stackt_toy_results.txt

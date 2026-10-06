@@ -1,0 +1,12 @@
+defaults:
+  - pusht
+  - _self_
+
+world:
+  env_name: anygoal/PushTAntigoal-v3
+
+eval:
+  dataset_name: pusht_antigoal_test
+
+output:
+  filename: push_t_antigoal_toy_results.txt

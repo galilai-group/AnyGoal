@@ -1,0 +1,13 @@
+defaults:
+  - cube_hop_from_cube
+  - _self_
+
+world:
+  env_name: anygoal/CubeDiagonal-v0
+
+eval:
+  dataset_name: ~/.stable_worldmodel/datasets/cube_diagonal_test
+
+output:
+  filename: cube_diagonal_toy_results.txt
+  success_criterion: criterion_3

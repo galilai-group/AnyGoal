@@ -1,0 +1,12 @@
+[submodule "worldmodels/driftworld"]
+	path = worldmodels/driftworld
+	url = https://github.com/Susie-Lu/driftworld.git
+[submodule "worldmodels/IRASim"]
+	path = worldmodels/IRASim
+	url = https://github.com/bytedance/IRASim.git
+[submodule "worldmodels/sensorimotor-world-model"]
+	path = worldmodels/sensorimotor-world-model
+	url = https://github.com/petr-ivashkov/sensorimotor-world-model.git
+[submodule "worldmodels/lewm"]
+	path = worldmodels/lewm
+	url = https://github.com/lucas-maes/le-wm.git

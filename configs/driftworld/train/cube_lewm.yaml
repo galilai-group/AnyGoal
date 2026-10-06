@@ -1,0 +1,68 @@
+model:
+  dir_name: driftworld_cube_h5_lewm
+  source: robomimic
+  unet_type: multi
+  num_future_frames: 1
+  num_history_frames: 3
+  action_dim: 5
+  temp_list: [0.02, 0.05, 0.2]
+  n_neg: 32
+  is_phase_2: false
+
+train:
+  seed: 1
+  num_epochs: 300
+  ckpt_every: 500
+  permanent_ckpt_every: 20000
+  decay: 0.999
+
+opt:
+  beta2: 0.95
+  lr: 0.00005
+  weight_decay: 0.01
+  warmup_steps: 500
+  grad_clip: 2.0
+
+data:
+  batch_size: 2
+  dataset_name: cube_single_expert
+  dataset_root: ${oc.env:DRIFTWORLD_DATA_ROOT,'~/.stable_worldmodel'}
+  frameskip: 5
+  action_mode: relative
+  pred_horizon: 4
+  num_history: 2
+  num_future: 1
+  num_train_demos: 500
+  resize_scale: 96
+  normalize_img: true
+  max_samples: null
+
+dataloader:
+  num_workers: 6
+  prefetch_factor: 2
+  pin_memory: true
+
+visualization:
+  enabled: true
+  every_steps: 500
+  num_samples: 1
+  seed: 1
+
+eta:
+  log_every_steps: 100
+
+wandb_info:
+  entity: ${oc.env:WANDB_ENTITY,null}
+  project: ${oc.env:WANDB_PROJECT,anygoal-driftworld}
+  name: ${model.dir_name}_frameskip${data.frameskip}
+  saved_run_id: null
+  key: ${oc.env:WANDB_API_KEY,""}
+
+output:
+  checkpoint_root: ~/.cache/anygoal/checkpoints
+  description: driftworld_cube_h5_lewm
+  run_directory: ${oc.env:DRIFTWORLD_RUN_DIRECTORY,null}
+
+output_dir: null
+path_ckpt_latest: null
+path_ckpt_2nd_latest: null

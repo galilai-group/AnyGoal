@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anygoal.dev/schemas/artifact-v1.schema.json",
+  "title": "AnyGoal artifact sidecar",
+  "type": "object",
+  "required": ["format_version", "artifact_type", "id", "created_at", "provenance"],
+  "properties": {
+    "format_version": {"const": 1},
+    "artifact_type": {"enum": ["dataset", "checkpoint", "prediction", "planning", "analysis"]},
+    "id": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "provenance": {
+      "type": "object",
+      "required": ["command", "seed"],
+      "properties": {
+        "command": {"type": "array", "items": {"type": "string"}},
+        "seed": {"type": "integer"},
+        "git_commit": {"type": ["string", "null"]}
+      }
+    }
+  },
+  "additionalProperties": true
+}

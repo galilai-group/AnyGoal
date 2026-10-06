@@ -1,0 +1,66 @@
+model:
+  source_root: ${oc.env:SENSORIMOTOR_SOURCE_ROOT,worldmodels/sensorimotor-world-model/planning}
+  checkpoint_root: ${oc.env:SENSORIMOTOR_CHECKPOINT_ROOT,'~/.cache/anygoal/checkpoints/sensorimotor'}
+  run_name_template: cube_inverse_lambda_1_seed3072
+  seeds: [0, 1, 2]
+
+dataset:
+  root: ${oc.env:SENSORIMOTOR_DATA_ROOT,'~/.stable_worldmodel'}
+  keys_to_cache: [action]
+
+world:
+  env_name: anygoal/CubeHop-v0
+  num_envs: ${eval.num_eval}
+  max_episode_steps: 100
+  env_type: single
+  ob_type: states
+  multiview: false
+  width: 224
+  height: 224
+  visualize_info: false
+  terminate_at_goal: true
+  evaluation_ee_position_tolerance: 0.04
+  evaluation_ee_yaw_tolerance: 0.10
+  evaluation_cube_position_tolerance: 0.04
+
+seed:
+  task_base: 0
+  policy_base: 0
+
+plan_config:
+  horizon: 5
+  receding_horizon: 5
+  action_block: 5
+
+solver:
+  batch_size: 1
+  num_samples: 300
+  var_scale: 1.0
+  n_steps: 30
+  topk: 30
+
+eval:
+  num_eval: 50
+  goal_offset_steps: 25
+  eval_budget: 50
+  img_size: 224
+  dataset_name: cube_hop_test
+  save_video: false
+  callables:
+    - method: set_state
+      args:
+        qpos:
+          value: qpos
+        qvel:
+          value: qvel
+    - method: set_evaluation_goal
+      args:
+        effector_pos:
+          value: goal_proprio_effector_pos
+        effector_yaw:
+          value: goal_proprio_effector_yaw
+        cube_pos:
+          value: goal_privileged_block_0_pos
+
+output:
+  directory: ${oc.env:SENSORIMOTOR_OUTPUT_ROOT,outputs/sensorimotor}/cube_hop

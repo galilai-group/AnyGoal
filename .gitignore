@@ -1,0 +1,11 @@
+*/__pycache__/*
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv
+
+log_slurm/*
+paper/results/
+wandb
+outputs
+AGENTS.md

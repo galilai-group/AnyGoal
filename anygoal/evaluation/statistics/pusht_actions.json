@@ -1,0 +1,15 @@
+{
+  "dataset": "pusht_expert_train.h5",
+  "actions": [
+    [0.0, 0.0],
+    [0.25, 0.0],
+    [-0.25, 0.0],
+    [0.25, -0.25],
+    [0.25, 0.25],
+    [-0.25, -0.25],
+    [-0.25, 0.25],
+    [0.0, -0.25],
+    [0.0, 0.25]
+  ],
+  "source": "Original PushT counterfactual bias-plot protocol"
+}

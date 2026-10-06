@@ -1,0 +1,65 @@
+model:
+  checkpoint: ${oc.env:IRASIM_CHECKPOINT,'~/.cache/anygoal/checkpoints/SET_IRASIM_CHECKPOINT/0000000.pt'}
+  vae_model_path: ${oc.env:IRASIM_VAE_PATH,'~/.cache/anygoal/checkpoints/SET_IRASIM_SDXL'}
+  vae_subfolder: vae
+  scheduler_path: ${oc.env:IRASIM_SCHEDULER_PATH,'~/.cache/anygoal/sources/IRASim/pretrained_models/scheduler'}
+  beta_start: 0.0001
+  beta_end: 0.02
+  beta_schedule: linear
+  variance_type: learned_range
+  inference_steps: 50
+  guidance_scale: 1.0
+  action_frameskip: 5
+  num_history_frames: 3
+  rollout_batch_size: 1
+  num_rollout_samples: 1
+  rollout_seed: 54025
+  cost_type: pixel_mse
+
+dataset:
+  root: ${oc.env:IRASIM_DATA_ROOT,'~/.stable_worldmodel'}
+  keys_to_cache: [action, proprio, state]
+
+world:
+  env_name: swm/PushT-v1
+  max_episode_steps: 100
+
+seed:
+  task: 44025
+  policy: 54025
+
+plan_config:
+  horizon: 5
+  receding_horizon: 5
+  history_len: 3
+  action_block: 5
+  warm_start: true
+
+# IRASim diffusion rollouts are much more expensive than the other adapters.
+# These are runnable starting values, not a claim of performance parity.
+solver:
+  batch_size: 1
+  num_samples: 16
+  var_scale: 1.0
+  n_steps: 2
+  topk: 4
+
+eval:
+  num_eval: 50
+  goal_offset_steps: 25
+  eval_budget: 50
+  render_size: 224
+  dataset_name: pusht_expert_train
+  callables:
+    - method: _set_state
+      args:
+        state:
+          value: state
+    - method: _set_goal_state
+      args:
+        goal_state:
+          value: goal_state
+
+output:
+  directory: ${oc.env:IRASIM_OUTPUT_ROOT,outputs/irasim}/pusht
+  save_video: false

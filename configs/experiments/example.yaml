@@ -1,0 +1,6 @@
+# Experiment-specific values override package defaults and the selected site file.
+paths:
+  outputs: ./outputs
+wandb:
+  enabled: false
+  tags: [example]

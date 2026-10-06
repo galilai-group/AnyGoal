@@ -1,0 +1,60 @@
+defaults:
+  - launcher: local
+  - solver: cem
+  - _self_
+
+world:
+  env_name: anygoal/CubeHop-v0
+  num_envs: ${eval.num_eval}
+  max_episode_steps: ???
+  env_type: single
+  ob_type: states
+  multiview: false
+  width: 224
+  height: 224
+  visualize_info: false
+  terminate_at_goal: true
+  evaluation_ee_position_tolerance: 0.04
+  evaluation_ee_yaw_tolerance: 0.10
+  evaluation_cube_position_tolerance: 0.04
+
+dataset:
+  stats: ${eval.dataset_name}
+  keys_to_cache: [action]
+
+seed: 0
+variant: dinowm_noprop
+policy: cube/dinowm_noprop
+preflight: false
+
+plan_config:
+  horizon: 5
+  receding_horizon: 5
+  action_block: 5
+
+eval:
+  num_eval: 50
+  goal_offset_steps: 25
+  eval_budget: 50
+  # This checkpoint has 196 tokens at patch size 14, so it requires 196x196.
+  img_size: 196
+  dataset_name: cube_hop_test
+  callables:
+    - method: set_state
+      args:
+        qpos:
+          value: qpos
+        qvel:
+          value: qvel
+    - method: set_evaluation_goal
+      args:
+        effector_pos:
+          value: goal_proprio_effector_pos
+        effector_yaw:
+          value: goal_proprio_effector_yaw
+        cube_pos:
+          value: goal_privileged_block_0_pos
+
+output:
+  directory: outputs/cube_hop/prejepa_noprop/seed_${seed}
+  filename: cube_hop_prejepa_noprop_results.txt

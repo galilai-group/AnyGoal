@@ -1,0 +1,27 @@
+name: cube_extra
+dataset_name: cube_single_expert.h5
+cache_dir: null
+frameskip: 5
+state_dim: 17
+action_dim: 5
+normalization_path: configs/toy_predictors/statistics/cube_single_expert_17d.json
+extra_validation_sets: null
+keys_to_load:
+  - proprio_effector_pos
+  - proprio_effector_yaw
+  - proprio_gripper_opening
+  - privileged_block_0_pos
+  - privileged_block_0_yaw
+  - proprio_joint_pos
+  - action
+keys_to_cache:
+  - proprio_effector_pos
+  - proprio_effector_yaw
+  - proprio_gripper_opening
+  - privileged_block_0_pos
+  - privileged_block_0_yaw
+  - proprio_joint_pos
+  - action
+adapter:
+  _target_: anygoal.datasets.CubeTrueStateAdapter
+  include_joint_positions: true

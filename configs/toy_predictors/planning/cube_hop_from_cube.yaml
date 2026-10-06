@@ -1,0 +1,23 @@
+defaults:
+  - cube
+  - _self_
+
+world:
+  env_name: anygoal/CubeHop-v0
+  evaluation_ee_position_tolerance: 0.04
+  evaluation_ee_yaw_tolerance: 0.10
+  evaluation_cube_position_tolerance: 0.04
+
+eval:
+  dataset_name: cube_single_expert
+  callables:
+    - method: set_state
+      args:
+        qpos:
+          value: qpos
+        qvel:
+          value: qvel
+
+output:
+  filename: cube_hop_from_cube_toy_results.txt
+  success_criterion: criterion_3

@@ -1,0 +1,65 @@
+{
+  "dataset_path": "tworoom.h5",
+  "selection": "largest shared magnitude m for {-m, 0, +m}^2",
+  "actions": [
+    [
+      -1.0,
+      -1.0
+    ],
+    [
+      -1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      1.0
+    ],
+    [
+      0.0,
+      -1.0
+    ],
+    [
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      1.0
+    ],
+    [
+      1.0,
+      -1.0
+    ],
+    [
+      1.0,
+      0.0
+    ],
+    [
+      1.0,
+      1.0
+    ]
+  ],
+  "magnitude": 1.0,
+  "all_points_supported": true,
+  "action_20nn_radii": [
+    0.0,
+    0.0010820627212524414,
+    0.0,
+    0.0007052719593048096,
+    0.023726703791607476,
+    0.0007397234439849854,
+    0.0,
+    0.000747978687286377,
+    0.0
+  ],
+  "support": {
+    "method": "raw 2-D Euclidean 20-nearest-neighbor radius",
+    "seed": 20260913,
+    "finite_action_count": 910809,
+    "reference_action_count": 200000,
+    "calibration_action_count": 20000,
+    "neighbors": 20,
+    "calibration_quantile": 0.95,
+    "radius": 0.03166491706248852
+  }
+}

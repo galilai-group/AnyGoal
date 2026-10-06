@@ -1,0 +1,18 @@
+name: drift_state_predictor_large
+_target_: anygoal.wm.toy_predictors.DriftWorldStatePredictor
+state_dim: ${data.state_dim}
+action_dim: ${data.action_dim}
+action_frameskip: ${data.frameskip}
+history_size: ${history_size}
+hidden_dim: 512
+num_res_blocks: 6
+time_embed_dim: null
+action_embed_dim: 128
+dropout: 0.0
+activation: silu
+norm: layernorm
+temperatures: [0.02, 0.05, 0.2]
+n_neg: 16
+decay: 0.999
+rollout_seed: ${seed}
+num_rollout_samples: 1

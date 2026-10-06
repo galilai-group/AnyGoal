@@ -1,0 +1,9 @@
+defaults:
+  - cube_hop_from_cube
+  - _self_
+
+eval:
+  dataset_name: cube_hop_test
+
+output:
+  filename: cube_hop_toy_results.txt
