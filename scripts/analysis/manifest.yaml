@@ -1,0 +1,59 @@
+schema_version: 1
+
+# The matrices preserve the currently declared evaluation protocol without
+# changing solver, seed, checkpoint, or temporal defaults. Checkpoint URLs and
+# checksums must be added before the public release.
+matrices:
+  - id: prediction-public-matrix
+    evaluation: prediction
+    resource_preset: gpu-eval
+    models:
+      - lewm
+      - sensorimotor
+      - prejepa
+      - driftworld
+      - irasim
+      - toy-adaln
+      - toy-action-duplicate
+      - toy-driftworld
+    datasets:
+      - pusht
+      - avoidt
+      - stackt
+      - pusht-antigoal
+      - cube
+      - cubehop
+      - cubediagonal
+      - insertpeg
+      - avoid_peg
+      - extractpeg
+      - tworoom
+      - tworoom_route
+    seeds: [0, 1, 2]
+
+  - id: planning-public-matrix
+    evaluation: planning
+    resource_preset: gpu-eval
+    models:
+      - lewm
+      - sensorimotor
+      - prejepa
+      - driftworld
+      - irasim
+      - toy-adaln
+      - toy-action-duplicate
+      - toy-driftworld
+    datasets:
+      - pusht
+      - avoidt
+      - stackt
+      - pusht-antigoal
+      - cube
+      - cubehop
+      - cubediagonal
+      - insertpeg
+      - avoid_peg
+      - extractpeg
+      - tworoom
+      - tworoom_route
+    seeds: [0, 1, 2]

@@ -234,9 +234,14 @@ class IRASimHDF5Dataset(torch.utils.data.Dataset):
     ) -> None:
         if num_frames < 2 or frameskip < 1:
             raise ValueError("num_frames must be at least 2 and frameskip positive.")
+        dataset_path = Path(name).expanduser()
+        location = (
+            {"path": dataset_path}
+            if dataset_path.is_absolute() or dataset_path.suffix in {".h5", ".hdf5"}
+            else {"name": name, "cache_dir": Path(cache_dir).expanduser()}
+        )
         self.dataset = swm.data.HDF5Dataset(
-            name,
-            cache_dir=Path(cache_dir).expanduser(),
+            **location,
             frameskip=int(frameskip),
             num_steps=int(num_frames),
             keys_to_load=["pixels", "action"],
@@ -333,9 +338,17 @@ def get_irasim_hdf5_datasets(args):
     validation_fraction = float(args.get("validation_fraction", 0.05))
     if not 0 < validation_fraction < 1:
         raise ValueError("validation_fraction must be in (0, 1).")
+    probe_name = Path(str(args.h5_dataset_name)).expanduser()
+    probe_location = (
+        {"path": probe_name}
+        if probe_name.is_absolute() or probe_name.suffix in {".h5", ".hdf5"}
+        else {
+            "name": str(args.h5_dataset_name),
+            "cache_dir": Path(args.h5_dataset_root).expanduser(),
+        }
+    )
     probe = swm.data.HDF5Dataset(
-        str(args.h5_dataset_name),
-        cache_dir=Path(args.h5_dataset_root).expanduser(),
+        **probe_location,
         keys_to_load=["action"],
         keys_to_cache=["action"],
     )

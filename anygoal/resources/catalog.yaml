@@ -9,7 +9,7 @@ datasets:
     evaluation_id: pusht
     config_stem: pusht
     schema: stable-worldmodel-hdf5-v1
-    source: import
+    source: external
   avoidt:
     aliases: [avoid_t]
     family: pusht
@@ -19,7 +19,7 @@ datasets:
     config_stem: avoidt
     schema: stable-worldmodel-hdf5-v1
     source: generated
-    collector: scripts/collect_avoidt.py
+    collector: anygoal.collections.avoidt
     default_seed: 0
   stackt:
     aliases: [stack_t]
@@ -31,7 +31,7 @@ datasets:
     planning_stems: {irasim: stackt_v2}
     schema: stable-worldmodel-hdf5-v1
     source: generated
-    collector: scripts/collect_stackt_v2.py
+    collector: anygoal.collections.stackt
     default_seed: 0
   pusht-antigoal:
     aliases: [pusht_antigoal, push_t_antigoal]
@@ -43,7 +43,7 @@ datasets:
     planning_stems: {irasim: push_t_antigoal_v3}
     schema: stable-worldmodel-hdf5-v1
     source: generated
-    collector: scripts/collect_push_t_antigoal_v3.py
+    collector: anygoal.collections.pusht_antigoal
     default_seed: 0
   cube:
     aliases: [cube_single]
@@ -53,7 +53,7 @@ datasets:
     evaluation_id: cube
     config_stem: cube
     schema: stable-worldmodel-hdf5-v1
-    source: import
+    source: external
   cubehop:
     aliases: [cube_hop]
     family: cube
@@ -63,7 +63,7 @@ datasets:
     config_stem: cube_hop
     schema: stable-worldmodel-hdf5-v1
     source: generated
-    collector: scripts/collect_cube_hop.py
+    collector: anygoal.collections.cube_hop
     default_seed: 0
   cubediagonal:
     aliases: [cube_diagonal]
@@ -74,38 +74,38 @@ datasets:
     config_stem: cube_diagonal
     schema: stable-worldmodel-hdf5-v1
     source: generated
-    collector: scripts/collect_cube_diagonal.py
-    default_seed: 10000
+    collector: anygoal.collections.cube_diagonal
+    default_seed: 10065
   insertpeg:
-    aliases: [manipulator_insert_peg]
-    family: manipulator
-    filename: manipulator_insert_peg_weak_expert_train.h5
-    environment: anygoal/ManipulatorInsertPeg-v0
-    evaluation_id: manipulator_insert_peg
-    config_stem: manipulator_insert_peg
+    aliases: [insert_peg]
+    family: insert_peg
+    filename: insert_peg_weak_expert_train.h5
+    environment: anygoal/InsertPeg-v0
+    evaluation_id: insert_peg
+    config_stem: insert_peg
     schema: stable-worldmodel-hdf5-v1
-    source: import
-  hug_box:
-    aliases: [hug-box, manipulator_hug_box]
-    family: manipulator
+    source: external
+  avoid_peg:
+    aliases: [avoid-peg]
+    family: insert_peg
     filename: avoid_peg_test.h5
-    environment: anygoal/ManipulatorInsertPeg-v0
-    evaluation_id: manipulator_hug_box
-    config_stem: manipulator_insert_peg
+    environment: anygoal/InsertPeg-v0
+    evaluation_id: avoid_peg
+    config_stem: insert_peg
     schema: stable-worldmodel-hdf5-v1
     source: generated
-    collector: scripts/collect_manipulator_hug_box.py
+    collector: anygoal.collections.avoid_peg
     default_seed: 20260914
   extractpeg:
-    aliases: [extract-peg, manipulator_extract_peg]
-    family: manipulator
+    aliases: [extract-peg, extract_peg]
+    family: insert_peg
     filename: extract_peg_test.h5
-    environment: anygoal/ManipulatorInsertPeg-v0
-    evaluation_id: manipulator_extract_peg
-    config_stem: manipulator_insert_peg
+    environment: anygoal/InsertPeg-v0
+    evaluation_id: extract_peg
+    config_stem: insert_peg
     schema: stable-worldmodel-hdf5-v1
     source: generated
-    collector: scripts/collect_manipulator_extract_peg.py
+    collector: anygoal.collections.extract_peg
     default_seed: 20260915
   tworoom:
     aliases: [two_room]
@@ -115,7 +115,7 @@ datasets:
     evaluation_id: tworoom
     config_stem: tworoom
     schema: stable-worldmodel-hdf5-v1
-    source: import
+    source: external
   tworoom_route:
     aliases: [tworoom-route, tworoom_triangle, tworoom_triangles, tworoom_route_test]
     family: tworoom
@@ -125,58 +125,78 @@ datasets:
     config_stem: tworoom_triangle
     schema: stable-worldmodel-hdf5-v1
     source: generated
-    collector: scripts/collect_tworoom_triangle.py
+    collector: anygoal.collections.tworoom_triangle
     default_seed: 0
 
 models:
   lewm:
     aliases: []
     capabilities: [train, predict, plan]
-    families: [pusht, cube, tworoom, manipulator]
+    families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: lewm
-    trainer: scripts/train_lewm.py
-    predictor: scripts/eval.py
-    planner: scripts/planning_lewm.py
+    trainer: scripts/train/train_lewm.py
+    predictor: scripts/eval/eval.py
+    planner: scripts/plan/planning_lewm.py
     trainer_config_style: hydra
+    training_profiles:
+      pusht: null
+      cube: null
+      tworoom: null
+      insertpeg: null
     planning_config_dir: lewm
     planner_config_style: hydra
     planner_seed_style: override
   sensorimotor:
     aliases: [sensorimotor_wm]
     capabilities: [train, predict, plan]
-    families: [pusht, cube, tworoom, manipulator]
+    families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: sensorimotor
-    trainer: scripts/train_sensorimotor.py
-    predictor: scripts/eval.py
-    planner: scripts/planning_sensorimotor.py
+    trainer: scripts/train/train_sensorimotor.py
+    predictor: scripts/eval/eval.py
+    planner: scripts/plan/planning_sensorimotor.py
     trainer_config_style: hydra
-    training_config_dir: sensorimotor/train
+    training_profiles:
+      pusht: scripts/train/config/sensorimotor/pusht.yaml
+      cube: scripts/train/config/sensorimotor/cube.yaml
+      tworoom: scripts/train/config/sensorimotor/tworoom.yaml
+      insertpeg: scripts/train/config/sensorimotor/insert_peg.yaml
+    training_config_dir: sensorimotor
     planning_config_dir: sensorimotor
     planner_config_style: argparse
     planner_seed_style: argparse
   prejepa:
     aliases: [dino-wm, dinowm]
     capabilities: [train, predict, plan]
-    families: [pusht, cube, tworoom, manipulator]
+    families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: prejepa
-    trainer: scripts/train_prejepa_manipulator_insert_peg.py
-    predictor: scripts/eval.py
-    planner: scripts/planning_prejepa.py
+    trainer: scripts/train/train_prejepa.py
+    predictor: scripts/eval/eval.py
+    planner: scripts/plan/planning_prejepa.py
     trainer_config_style: hydra
+    training_profiles:
+      pusht: null
+      cube: null
+      tworoom: null
+      insertpeg: null
     planning_config_dir: prejepa
     planner_config_style: hydra
     planner_seed_style: override
   driftworld:
     aliases: [driftworldmodel]
     capabilities: [train, predict, plan]
-    families: [pusht, cube, tworoom, manipulator]
+    families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: driftworld
-    trainer: scripts/train_driftworld.py
-    predictor: scripts/eval.py
-    planner: scripts/planning_driftworld.py
-    training_config_dir: driftworld/train
+    trainer: scripts/train/train_driftworld.py
+    predictor: scripts/eval/eval.py
+    planner: scripts/plan/planning_driftworld.py
+    training_config_dir: driftworld
     training_config_suffix: _lewm
     trainer_config_style: argparse
+    training_profiles:
+      pusht: scripts/train/config/driftworld/pusht_lewm.yaml
+      cube: scripts/train/config/driftworld/cube_lewm.yaml
+      tworoom: scripts/train/config/driftworld/tworoom_lewm.yaml
+      insertpeg: scripts/train/config/driftworld/insert_peg_lewm.yaml
     planning_config_dir: driftworld
     planning_config_suffix: _lewm
     planner_config_style: argparse
@@ -184,25 +204,35 @@ models:
   irasim:
     aliases: []
     capabilities: [train, predict, plan]
-    families: [pusht, cube, tworoom, manipulator]
+    families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: irasim
-    trainer: scripts/train_irasim.py
-    predictor: scripts/eval.py
-    planner: scripts/planning_irasim.py
-    training_config_dir: irasim/train
+    trainer: scripts/train/train_irasim.py
+    predictor: scripts/eval/eval.py
+    planner: scripts/plan/planning_irasim.py
+    training_config_dir: irasim
     trainer_config_style: argparse
+    training_profiles:
+      pusht: scripts/train/config/irasim/pusht.yaml
+      cube: scripts/train/config/irasim/cube.yaml
+      tworoom: scripts/train/config/irasim/tworoom.yaml
+      insertpeg: scripts/train/config/irasim/insert_peg.yaml
     planning_config_dir: irasim
     planner_config_style: argparse
     planner_seed_style: triple
   toy-adaln:
     aliases: [adaln, adaln_predictor]
     capabilities: [train, predict, plan]
-    families: [pusht, cube, tworoom, manipulator]
+    families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: adaln_predictor
-    trainer: scripts/train_toy_predictor.py
-    predictor: scripts/eval.py
-    planner: scripts/planning_toy.py
+    trainer: scripts/train/train_toy_predictor.py
+    predictor: scripts/eval/eval.py
+    planner: scripts/plan/planning_toy.py
     trainer_config_style: hydra
+    training_profiles:
+      pusht: scripts/train/config/toy_predictors/train.yaml
+      cube: scripts/train/config/toy_predictors/train.yaml
+      tworoom: scripts/train/config/toy_predictors/train.yaml
+      insertpeg: scripts/train/config/toy_predictors/train.yaml
     planning_config_dir: toy_predictors
     planner_config_style: hydra
     planner_seed_style: override
@@ -210,12 +240,17 @@ models:
   toy-action-duplicate:
     aliases: [action_duplicate, action_duplicated_predictor]
     capabilities: [train, predict, plan]
-    families: [pusht, cube, tworoom, manipulator]
+    families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: action_duplicated_predictor
-    trainer: scripts/train_toy_predictor.py
-    predictor: scripts/eval.py
-    planner: scripts/planning_toy.py
+    trainer: scripts/train/train_toy_predictor.py
+    predictor: scripts/eval/eval.py
+    planner: scripts/plan/planning_toy.py
     trainer_config_style: hydra
+    training_profiles:
+      pusht: scripts/train/config/toy_predictors/train.yaml
+      cube: scripts/train/config/toy_predictors/train.yaml
+      tworoom: scripts/train/config/toy_predictors/train.yaml
+      insertpeg: scripts/train/config/toy_predictors/train.yaml
     planning_config_dir: toy_predictors
     planner_config_style: hydra
     planner_seed_style: override
@@ -223,12 +258,17 @@ models:
   toy-driftworld:
     aliases: [toy_driftworld]
     capabilities: [train, predict, plan]
-    families: [pusht, cube, tworoom, manipulator]
+    families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: toy_driftworld
-    trainer: scripts/train_toy_driftworld.py
-    predictor: scripts/eval.py
-    planner: scripts/planning_toy.py
+    trainer: scripts/train/train_toy_driftworld.py
+    predictor: scripts/eval/eval.py
+    planner: scripts/plan/planning_toy.py
     trainer_config_style: hydra
+    training_profiles:
+      pusht: scripts/train/config/toy_driftworld/train.yaml
+      cube: scripts/train/config/toy_driftworld/train.yaml
+      tworoom: scripts/train/config/toy_driftworld/train.yaml
+      insertpeg: scripts/train/config/toy_driftworld/train.yaml
     planning_config_dir: toy_predictors
     planner_config_style: hydra
     planner_seed_style: override

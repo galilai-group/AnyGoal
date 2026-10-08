@@ -20,7 +20,7 @@ EXPECTED_DATASETS = {
     "cubehop",
     "cubediagonal",
     "insertpeg",
-    "hug_box",
+    "avoid_peg",
     "extractpeg",
     "tworoom",
     "tworoom_route",
@@ -43,6 +43,22 @@ def test_catalog_matches_public_support_sets():
     assert set(registry.models) == EXPECTED_MODELS
     assert registry.dataset("cube_diagonal").id == "cubediagonal"
     assert registry.model("adaln").id == "toy-adaln"
+    assert set(registry.model("driftworld").training_profiles) == {
+        "pusht",
+        "cube",
+        "tworoom",
+        "insertpeg",
+    }
+    for model_id in ("lewm", "sensorimotor", "prejepa"):
+        assert set(registry.model(model_id).training_profiles) == {
+            "pusht",
+            "cube",
+            "tworoom",
+            "insertpeg",
+        }
+    assert {
+        item.id for item in registry.datasets.values() if item.source == "external"
+    } == {"pusht", "cube", "insertpeg", "tworoom"}
 
 
 def test_default_config_has_no_personal_cluster_policy(tmp_path, monkeypatch):
@@ -102,56 +118,74 @@ def test_prediction_dry_run_preserves_underlying_evaluator(capsys):
         == 0
     )
     output = capsys.readouterr().out
-    assert "scripts/eval.py" in output
+    assert "scripts/eval/eval.py" in output
     assert "--model driftworld" in output
     assert "--environment pusht" in output
 
 
-def test_manipulator_collect_smoke_uses_balanced_episode_count(capsys, tmp_path):
-    assert (
+def test_top_level_collect_cli_forwards_native_options(monkeypatch, tmp_path):
+    captured = {}
+
+    def fake_collect(dataset, arguments):
+        captured["dataset"] = dataset
+        captured["arguments"] = arguments
+        return tmp_path / "hug.h5"
+
+    monkeypatch.setattr("anygoal.cli.collect_from_cli", fake_collect)
+    assert main(["collect", "avoid_peg", "--num-episodes", "2"]) == 0
+    assert captured == {
+        "dataset": "avoid_peg",
+        "arguments": ["--num-episodes", "2"],
+    }
+
+
+def _write_training_hdf5(path, *, environment):
+    with h5py.File(path, "w") as handle:
+        handle.create_dataset("action", data=np.zeros((2, 2), dtype=np.float32))
+        handle.create_dataset("pixels", data=np.zeros((2, 4, 4, 3), dtype=np.uint8))
+        handle.create_dataset("ep_len", data=np.array([2], dtype=np.int32))
+        handle.create_dataset("ep_offset", data=np.array([0], dtype=np.int64))
+        handle.attrs["environment"] = environment
+
+
+def test_variant_training_requires_verified_profile(capsys, tmp_path):
+    data = tmp_path / "avoidt.h5"
+    _write_training_hdf5(data, environment="anygoal/AvoidT-v1")
+    try:
         main(
             [
-                "data",
-                "collect",
-                "hug_box",
-                "--preset",
-                "smoke",
-                "--output",
-                str(tmp_path / "hug.h5"),
+                "train",
+                "driftworld",
+                "--data",
+                str(data),
+                "--task",
+                "avoidt",
                 "--dry-run",
             ]
         )
-        == 0
-    )
-    assert "--episodes 2" in capsys.readouterr().out
-
-
-def test_variant_training_requires_explicit_config(capsys):
-    try:
-        main(["train", "driftworld", "--dataset", "avoidt", "--dry-run"])
     except SystemExit as error:
         assert error.code == 2
-    assert "requires an explicit --model-config" in capsys.readouterr().err
+    assert "no verified training profile" in capsys.readouterr().err
 
 
-def test_cube_diagonal_paper_recipe_preserves_split_and_seeds(capsys, tmp_path):
+def test_prejepa_training_supports_pusht(capsys, tmp_path):
+    data = tmp_path / "pusht.h5"
+    _write_training_hdf5(data, environment="swm/PushT-v1")
     assert (
         main(
             [
-                "data",
-                "collect",
-                "cubediagonal",
-                "--output",
-                str(tmp_path / "cube-diagonal.h5"),
+                "train",
+                "prejepa",
+                "--data",
+                str(data),
+                "--task",
+                "pusht",
                 "--dry-run",
             ]
         )
         == 0
     )
-    output = capsys.readouterr().out
-    assert "--episodes 50 --seed 10000" in output
-    assert "--episodes 350 --seed 10065" in output
-    assert "merge_cube_datasets.py" in output
+    assert "dataset_name=" in capsys.readouterr().out
 
 
 def test_public_planning_matrix_has_a_dispatch_path(capsys):
@@ -207,8 +241,8 @@ def test_catalog_resource_is_serializable():
         "cube": "cube_single_expert.h5",
         "cubehop": "cube_hop_test.h5",
         "cubediagonal": "cube_diagonal_test.h5",
-        "insertpeg": "manipulator_insert_peg_weak_expert_train.h5",
-        "hug_box": "avoid_peg_test.h5",
+        "insertpeg": "insert_peg_weak_expert_train.h5",
+        "avoid_peg": "avoid_peg_test.h5",
         "extractpeg": "extract_peg_test.h5",
         "tworoom": "tworoom.h5",
         "tworoom_route": "tworoom_route_test.h5",

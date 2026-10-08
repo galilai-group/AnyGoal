@@ -12,11 +12,11 @@ from pathlib import Path
 import numpy as np
 from scipy.optimize import differential_evolution
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from anygoal.datasets.cube_collection import (
+from anygoal.datasets.cube_support import (
     CALIBRATION_ACTIONS,
     REFERENCE_ACTIONS,
     REFERENCE_ACTION_SEED,
@@ -31,15 +31,15 @@ DEFAULT_DATASET = (
 )
 DEFAULT_OUTPUT = (
     REPO_ROOT
-    / "paper"
-    / "results"
+    / "outputs"
+    / "analysis"
     / "cube_counterfactual_sensitivity"
     / "action_grids.json"
 )
 DEFAULT_FIXED_Z_OUTPUT = (
     REPO_ROOT
-    / "paper"
-    / "results"
+    / "outputs"
+    / "analysis"
     / "cube_counterfactual_sensitivity"
     / "fixed_negative_z_8point_grids.json"
 )

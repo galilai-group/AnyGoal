@@ -31,21 +31,21 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 LEWM_MODULE_DIR = REPO_ROOT / "worldmodels" / "lewm"
 for source_dir in (REPO_ROOT, LEWM_MODULE_DIR):
     if str(source_dir) not in sys.path:
         sys.path.insert(0, str(source_dir))
 
 import save_counterfactual_sensitivity as base
-from anygoal.datasets.cube_collection import CubeActionSupport
+from anygoal.datasets.cube_support import CubeActionSupport
 
 
-RESULTS_DIR = REPO_ROOT / "paper" / "results" / "cube_counterfactual_sensitivity"
+RESULTS_DIR = REPO_ROOT / "outputs" / "analysis" / "cube_counterfactual_sensitivity"
 DEFAULT_DATASET = (
     Path.home() / ".stable_worldmodel" / "datasets" / "cube_single_expert.h5"
 )
-DEFAULT_CHECKPOINT = Path.home() / ".stable_worldmodel" / "cube" / "lewm_object.ckpt"
+DEFAULT_CHECKPOINT = Path.home() / ".stable_worldmodel/anygoal/lewm_cube.ckpt"
 DEFAULT_ACTION_GRIDS = RESULTS_DIR / "action_grids.json"
 
 

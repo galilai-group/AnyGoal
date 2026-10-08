@@ -6,10 +6,8 @@ import argparse
 import json
 import os
 import shlex
-import shutil
 import subprocess
 import sys
-import tempfile
 from itertools import product
 from dataclasses import asdict
 from pathlib import Path
@@ -18,29 +16,10 @@ from typing import Sequence
 import yaml
 
 from anygoal.config import load_config
+from anygoal.collection import collect_from_cli
 from anygoal.datasets.validation import validate_hdf5
 from anygoal.registry import DatasetSpec, ModelSpec, get_registry
 from anygoal.version import __version__
-
-
-BASE_DATASET = {
-    "pusht": "pusht",
-    "cube": "cube",
-    "tworoom": "tworoom",
-    "manipulator": "insertpeg",
-}
-TOY_DATA_CONFIG = {
-    "pusht": "pusht",
-    "cube": "cube_everything",
-    "tworoom": "tworoom_essential",
-    "manipulator": "manipulator_insert_peg_essential",
-}
-TOY_DRIFT_DATA_CONFIG = {
-    "pusht": "pusht",
-    "cube": "cube",
-    "tworoom": "tworoom",
-    "manipulator": "manipulator_insert_peg_essential",
-}
 
 
 def _repository_root() -> Path:
@@ -48,7 +27,11 @@ def _repository_root() -> Path:
     candidates = [Path(configured)] if configured else []
     candidates.extend([Path.cwd(), *Path.cwd().parents, Path(__file__).resolve().parents[1]])
     for candidate in candidates:
-        if (candidate / "scripts").is_dir() and (candidate / "configs").is_dir():
+        if (
+            (candidate / "pyproject.toml").is_file()
+            and (candidate / "anygoal").is_dir()
+            and (candidate / "scripts").is_dir()
+        ):
             return candidate.resolve()
     raise RuntimeError(
         "This operation needs the research source checkout. Set ANYGOAL_REPOSITORY "
@@ -75,148 +58,10 @@ def _execute(command: Sequence[str], *, dry_run: bool, cwd: Path | None = None) 
     return subprocess.run([str(part) for part in command], cwd=cwd, check=False).returncode
 
 
-def _default_output(spec: DatasetSpec, config: dict) -> Path:
-    return Path(config["paths"]["data"]).expanduser() / spec.filename
-
-
-def _collect_command(spec: DatasetSpec, preset: str) -> list[str]:
-    if not spec.collector:
-        raise ValueError(f"{spec.id} is imported from an upstream source, not generated.")
-    command = _python_command(_repository_root(), spec.collector)
-    smoke = {
-        "avoidt": ["--episodes-per-goal", "1", "--num-envs", "1"],
-        "stackt": ["--episodes", "1", "--num-envs", "1"],
-        "pusht-antigoal": ["--episodes-per-goal", "1", "--num-envs", "1"],
-        "cubehop": ["--episodes", "1", "--num-envs", "1"],
-        "cubediagonal": ["--episodes", "1", "--num-envs", "1", "--gif-episodes", "0"],
-        # These collectors balance left/right targets and intentionally require
-        # a positive even episode count.
-        "hug_box": ["--episodes", "2"],
-        "extractpeg": ["--episodes", "2"],
-        "tworoom_route": ["--smoke"],
-    }
-    return command + (smoke.get(spec.id, []) if preset == "smoke" else [])
-
-
 def _run_collect(args: argparse.Namespace) -> int:
-    registry = get_registry()
-    spec = registry.dataset(args.dataset_id)
-    config = load_config(site=args.site, experiment=args.config)
-    output = (args.output or _default_output(spec, config)).expanduser().resolve()
-    if spec.source == "import":
-        if args.source is None:
-            raise ValueError(
-                f"{spec.id} requires --source because its canonical data comes from upstream."
-            )
-        source = args.source.expanduser().resolve()
-        if not source.is_file():
-            raise FileNotFoundError(source)
-        if output.exists() and not args.overwrite:
-            raise FileExistsError(f"Refusing to overwrite: {output}")
-        report = validate_hdf5(source, dataset_id=spec.id)
-        if not report.valid:
-            messages = "; ".join(issue.message for issue in report.issues)
-            raise ValueError(f"Source validation failed: {messages}")
-        if args.dry_run:
-            print(f"copy {source} -> {output}")
-            return 0
-        output.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, output)
-        print(output)
-        return 0
-
-    seed = spec.default_seed if args.seed is None else args.seed
-    if spec.id == "cubediagonal" and args.preset == "paper":
-        return _collect_cube_diagonal_paper(
-            spec,
-            output=output,
-            seed=seed,
-            overwrite=args.overwrite,
-            dry_run=args.dry_run,
-            arguments=_clean_remainder(args.arguments),
-        )
-
-    command = _collect_command(spec, args.preset)
-    command.extend(["--output", str(output), "--seed", str(seed)])
-    if args.overwrite:
-        command.append("--overwrite")
-    command.extend(_clean_remainder(args.arguments))
-    return _execute(command, dry_run=args.dry_run, cwd=_repository_root())
-
-
-def _collect_cube_diagonal_paper(
-    spec: DatasetSpec,
-    *,
-    output: Path,
-    seed: int,
-    overwrite: bool,
-    dry_run: bool,
-    arguments: Sequence[str],
-) -> int:
-    """Reproduce the canonical 50+350 episode collection and merge recipe."""
-    if output.exists() and not overwrite:
-        raise FileExistsError(f"Refusing to overwrite: {output}")
-    root = _repository_root()
-    if not dry_run:
-        output.parent.mkdir(parents=True, exist_ok=True)
-    temporary_context = (
-        tempfile.TemporaryDirectory(prefix="anygoal-cubediagonal-", dir=output.parent)
-        if not dry_run
-        else None
-    )
-    temporary_root = (
-        Path(temporary_context.name)
-        if temporary_context is not None
-        else Path("/tmp/anygoal-cubediagonal-paper")
-    )
-    common = [
-        "--num-envs",
-        "5",
-        "--gif-episodes",
-        "0",
-        "--cube-yaw-center-deg",
-        "85",
-        "--cube-yaw-half-width-deg",
-        "5",
-        "--require-diagonal-lift",
-        "--min-lifted-targets",
-        "2",
-        "--max-abs-block-quat-xy",
-        "0.2",
-    ]
-    parts = ((50, seed), (350, seed + 65))
-    part_paths: list[Path] = []
-    try:
-        for episodes, part_seed in parts:
-            part_path = temporary_root / f"part-{episodes}.h5"
-            part_paths.append(part_path)
-            command = [
-                *_python_command(root, spec.collector),
-                "--episodes",
-                str(episodes),
-                "--seed",
-                str(part_seed),
-                "--output",
-                str(part_path),
-                *common,
-                *arguments,
-            ]
-            return_code = _execute(command, dry_run=dry_run, cwd=root)
-            if return_code:
-                return return_code
-        merge_command = [
-            sys.executable,
-            str(root / "scripts/merge_cube_datasets.py"),
-            "--output",
-            str(output),
-        ]
-        if overwrite:
-            merge_command.append("--overwrite")
-        merge_command.extend(str(path) for path in part_paths)
-        return _execute(merge_command, dry_run=dry_run, cwd=root)
-    finally:
-        if temporary_context is not None:
-            temporary_context.cleanup()
+    output = collect_from_cli(args.dataset_id, args.arguments)
+    print(output)
+    return 0
 
 
 def _run_validate(args: argparse.Namespace) -> int:
@@ -236,82 +81,52 @@ def _run_validate(args: argparse.Namespace) -> int:
     return 0 if report.valid else 1
 
 
-def _base_training_config(root: Path, model: ModelSpec, dataset: DatasetSpec) -> Path | None:
-    if dataset.id not in BASE_DATASET.values() or not model.training_config_dir:
-        return None
-    return (
-        root
-        / "configs"
-        / model.training_config_dir
-        / f"{dataset.config_stem}{model.training_config_suffix}.yaml"
-    )
-
-
 def _run_train(args: argparse.Namespace) -> int:
-    registry = get_registry()
-    model = registry.model(args.model_id)
-    dataset = registry.dataset(args.dataset_id)
-    if dataset.family not in model.families:
-        raise ValueError(f"{model.id} does not declare support for {dataset.family} datasets.")
-    root = _repository_root()
-    command = _python_command(root, model.trainer)
-    config = args.model_config or _base_training_config(root, model, dataset)
-    if config is not None:
-        config = config.expanduser().resolve()
-        if not config.is_file():
-            raise FileNotFoundError(config)
-        if model.trainer_config_style == "argparse":
-            command.extend(["--config", str(config)])
-        else:
-            command.extend(["--config-path", str(config.parent), "--config-name", config.stem])
-    elif dataset.id not in BASE_DATASET.values():
-        raise ValueError(
-            f"{dataset.id} is an evaluation dataset. Training it requires an explicit "
-            "--model-config so AnyGoal does not silently train on the "
-            f"{BASE_DATASET[dataset.family]} base dataset instead."
-        )
-    elif model.id in {"lewm", "sensorimotor"}:
-        raise ValueError(
-            f"{model.id} training needs --model-config pointing to the exact resolved "
-            "Hydra config. No replacement defaults were invented because that could "
-            "change model performance."
-        )
-    elif model.id == "prejepa" and dataset.id != "insertpeg":
-        raise ValueError(
-            "Only the repository's verified insertpeg PreJEPA recipe is selectable "
-            "without an explicit configuration."
-        )
+    from anygoal.training import prepare_training, train
 
-    if model.id == "prejepa":
-        dataset_path = Path("~/.stable_worldmodel/datasets").expanduser() / dataset.filename
-        command.extend(
-            [
-                f"dataset_name={dataset_path}",
-                "~wm.encoding.proprio",
-                "wm.history_size=3",
-                "wm.num_preds=1",
-                "frameskip=5",
-            ]
+    model_options = {}
+    for argument in _clean_remainder(args.arguments):
+        if "=" not in argument:
+            raise ValueError(
+                f"Invalid model-specific option {argument!r}; expected key=value."
+            )
+        key, raw_value = argument.split("=", 1)
+        model_options[key.replace(".", "__")] = yaml.safe_load(raw_value)
+    common = dict(
+        learning_rate=args.learning_rate,
+        batch_size=args.batch_size,
+        seed=args.seed,
+        num_workers=args.num_workers,
+        output_dir=args.output_dir,
+        max_steps=args.max_steps,
+        max_epochs=args.max_epochs,
+        **model_options,
+    )
+    if args.dry_run:
+        plan = prepare_training(
+            args.model_id, data=args.data, task=args.task, **common
         )
-    elif model.id == "toy-adaln":
-        command.extend([f"data={TOY_DATA_CONFIG[dataset.family]}", "model=adaln"])
-    elif model.id == "toy-action-duplicate":
-        command.extend(
-            [f"data={TOY_DATA_CONFIG[dataset.family]}", "model=action_duplicate"]
-        )
-    elif model.id == "toy-driftworld":
-        command.append(f"data={TOY_DRIFT_DATA_CONFIG[dataset.family]}")
-    command.extend(_clean_remainder(args.arguments))
-    return _execute(command, dry_run=args.dry_run, cwd=root)
+        print(plan.shell_command())
+        return 0
+    _, result = train(
+        args.model_id,
+        data=args.data,
+        task=args.task,
+        device=args.device,
+        **common,
+    )
+    print(result.checkpoint)
+    return 0
 
 
 def _planning_config(root: Path, model: ModelSpec, dataset: DatasetSpec) -> Path:
     stem = dataset.planning_stems.get(model.id, dataset.config_stem)
     return (
         root
-        / "configs"
+        / "scripts"
+        / "plan"
+        / "config"
         / model.planning_config_dir
-        / "planning"
         / f"{stem}{model.planning_config_suffix}.yaml"
     )
 
@@ -363,7 +178,7 @@ def _run_eval(args: argparse.Namespace) -> int:
                         f"model.rollout_seed={args.seed}",
                     ]
                 )
-        if dataset.id in {"hug_box", "extractpeg"}:
+        if dataset.id in {"avoid_peg", "extractpeg"}:
             extra.append(f"eval.dataset_name={Path(dataset.filename).stem}")
         if args.checkpoint:
             extra.append(
@@ -589,36 +404,33 @@ def _parser() -> argparse.ArgumentParser:
         or 0
     )
 
-    data_parser = subparsers.add_parser("data", help="Collect, import, or validate data.")
+    data_parser = subparsers.add_parser("data", help="Validate data.")
     data_subparsers = data_parser.add_subparsers(dest="data_command", required=True)
-    collect = data_subparsers.add_parser("collect", help="Collect or import a registered dataset.")
-    collect.add_argument("dataset_id")
-    collect.add_argument("--preset", choices=("smoke", "paper"), default="paper")
-    collect.add_argument("--source", type=Path, help="Required for imported base datasets.")
-    collect.add_argument("--output", type=Path)
-    collect.add_argument(
-        "--seed",
-        type=int,
-        help="Override the registered publication seed.",
-    )
-    collect.add_argument("--site", type=Path)
-    collect.add_argument("--config", type=Path, help="Experiment config.")
-    collect.add_argument("--overwrite", action="store_true")
-    collect.add_argument("--dry-run", action="store_true")
-    collect.add_argument("arguments", nargs="*", help="Collector options after --.")
-    collect.set_defaults(handler=_run_collect)
     validate = data_subparsers.add_parser("validate", help="Validate common HDF5 invariants.")
     validate.add_argument("path", type=Path)
     validate.add_argument("--dataset", dest="dataset_id")
     validate.add_argument("--json", action="store_true")
     validate.set_defaults(handler=_run_validate)
 
-    train = subparsers.add_parser("train", help="Run an unchanged registered trainer.")
+    collect = subparsers.add_parser("collect", help="Collect a generated dataset.")
+    collect.add_argument("dataset_id")
+    collect.add_argument("arguments", nargs=argparse.REMAINDER)
+    collect.set_defaults(handler=_run_collect)
+
+    train = subparsers.add_parser("train", help="Train a model on StableWM HDF5 data.")
     train.add_argument("model_id")
-    train.add_argument("--dataset", dest="dataset_id", required=True)
-    train.add_argument("--model-config", type=Path)
+    train.add_argument("--data", type=Path, required=True)
+    train.add_argument("--task", required=True)
+    train.add_argument("--learning-rate", type=float)
+    train.add_argument("--batch-size", type=int)
+    train.add_argument("--seed", type=int)
+    train.add_argument("--num-workers", type=int)
+    train.add_argument("--output-dir", type=Path)
+    train.add_argument("--max-steps", type=int)
+    train.add_argument("--max-epochs", type=int)
+    train.add_argument("--device")
     train.add_argument("--dry-run", action="store_true")
-    train.add_argument("arguments", nargs="*", help="Trainer overrides after --.")
+    train.add_argument("arguments", nargs="*", help="Model-specific key=value options.")
     train.set_defaults(handler=_run_train)
 
     evaluation = subparsers.add_parser("eval", help="Run a common evaluation protocol.")

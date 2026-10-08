@@ -12,6 +12,7 @@ trove-classifiers==2026.9.21.13
 wheel==0.45.1
 
 # Additional transitive packages required by the resolved standalone install.
+accelerate==1.15.0
 aiofiles==25.1.0
 asttokens==3.0.2
 decorator==5.3.1

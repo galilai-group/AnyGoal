@@ -289,10 +289,10 @@ def test_policy_accumulates_frame_aligned_visual_and_action_context():
 
 def test_train_and_planning_configs_share_frameskip_and_upstream_defaults():
     train_cfg = OmegaConf.load(
-        REPO_ROOT / "configs" / "irasim" / "train" / "pusht.yaml"
+        REPO_ROOT / "scripts" / "train" / "config" / "irasim" / "pusht.yaml"
     )
     planning_cfg = OmegaConf.load(
-        REPO_ROOT / "configs" / "irasim" / "planning" / "pusht.yaml"
+        REPO_ROOT / "scripts" / "plan" / "config" / "irasim" / "pusht.yaml"
     )
     assert train_cfg.frameskip == planning_cfg.model.action_frameskip == 5
     assert planning_cfg.plan_config.action_block == 5

@@ -4,7 +4,7 @@ import h5py
 import hdf5plugin  # noqa: F401
 import numpy as np
 
-from anygoal.datasets.cube_collection import (
+from anygoal.datasets.cube_support import (
     CUBE_H5_COLUMNS,
     COLUMN_DTYPES,
     CubeActionSupport,

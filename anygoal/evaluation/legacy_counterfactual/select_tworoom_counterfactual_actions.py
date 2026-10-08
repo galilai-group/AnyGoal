@@ -17,10 +17,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DATASET = Path.home() / ".stable_worldmodel" / "datasets" / "tworoom.h5"
 DEFAULT_OUTPUT_DIR = (
-    REPO_ROOT / "paper" / "results" / "tworoom_counterfactual_sensitivity"
+    REPO_ROOT / "outputs" / "analysis" / "tworoom_counterfactual_sensitivity"
 )
 SEED = 20260913
 

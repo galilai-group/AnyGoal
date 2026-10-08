@@ -36,13 +36,13 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 LEWM_MODULE_DIR = REPO_ROOT / "worldmodels" / "lewm"
 for source_dir in (REPO_ROOT, LEWM_MODULE_DIR):
     if str(source_dir) not in sys.path:
         sys.path.insert(0, str(source_dir))
 
-RESULTS_DIR = REPO_ROOT / "paper" / "results"
+RESULTS_DIR = REPO_ROOT / "outputs" / "analysis"
 
 
 IMAGENET_MEAN = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
@@ -587,7 +587,7 @@ def build_parser(description: str | None = None) -> argparse.ArgumentParser:
     parser.add_argument(
         "--checkpoint-path",
         type=Path,
-        default=swm_home / "pusht" / "lewm_object.ckpt",
+        default=swm_home / "anygoal" / "lewm_pusht.ckpt",
         help="Serialized LeWM object checkpoint.",
     )
     parser.add_argument(

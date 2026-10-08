@@ -5,7 +5,6 @@
 .venv
 
 log_slurm/*
-paper/results/
 wandb
 outputs
 AGENTS.md

@@ -1,0 +1,12 @@
+name: tworoom
+dataset_name: tworoom.h5
+cache_dir: null
+frameskip: 5
+state_dim: 2
+action_dim: 2
+normalization_path: scripts/train/config/toy_predictors/statistics/tworoom_essential_2d_minmax.json
+keys_to_load: [observation, action]
+keys_to_cache: [observation, action]
+adapter:
+  _target_: anygoal.datasets.TwoRoomTrueStateAdapter
+  include_doors: false

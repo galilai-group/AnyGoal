@@ -31,7 +31,7 @@ from .prediction_models import (
 REPO_ROOT = Path(__file__).resolve().parents[2]
 STATISTICS_DIRECTORY = Path(__file__).with_name("statistics")
 MODEL_NAMES = ("lewm", "sensorimotor", "adaln_predictor")
-ENVIRONMENTS = ("pusht", "cube", "tworoom", "manipulator_insert_peg")
+ENVIRONMENTS = ("pusht", "cube", "tworoom", "insert_peg")
 COUNTERFACTUAL_CHUNK_SIZE = 4
 INSERT_PEG_GRIP_FRAMES = 10
 INSERT_PEG_GRIP_DISTANCE = 0.08
@@ -43,7 +43,7 @@ def _load_counterfactual_protocols(environment: str) -> tuple[dict, Path]:
         "pusht": "pusht_actions.json",
         "cube": "cube_action_grids.json",
         "tworoom": "tworoom_actions.json",
-        "manipulator_insert_peg": "manipulator_insert_peg_actions.json",
+        "insert_peg": "insert_peg_actions.json",
     }
     path = STATISTICS_DIRECTORY / filenames[environment]
     payload = json.loads(path.read_text())
@@ -63,7 +63,7 @@ def _load_counterfactual_protocols(environment: str) -> tuple[dict, Path]:
         bias_axes = {
             "pusht": ("agent_object_distance",),
             "tworoom": ("corridor_center_distance",),
-            "manipulator_insert_peg": ("peg_target_distance_after_grip",),
+            "insert_peg": ("peg_target_distance_after_grip",),
         }[environment]
         protocols = {"default": {"actions": payload["actions"], "bias_axes": bias_axes}}
     for protocol in protocols.values():
@@ -156,7 +156,7 @@ def _bias_axes(
                 agent - np.asarray((112.0, 52.5)), axis=1
             )
         }
-    if environment == "manipulator_insert_peg":
+    if environment == "insert_peg":
         observation = np.asarray(episode["observation"])[current_indices]
         peg, target = observation[:, 33:35], observation[:, 40:42]
         return {
@@ -458,7 +458,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", required=True, choices=MODEL_NAMES)
     parser.add_argument("--environment", required=True, choices=ENVIRONMENTS)
-    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/prediction_eval.yaml")
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=REPO_ROOT / "scripts/eval/config/prediction_eval.yaml",
+    )
     parser.add_argument(
         "--output-root",
         type=Path,
@@ -499,10 +503,10 @@ def main() -> None:
     output_directory = args.output_root / args.model / args.environment
     if (output_directory / "metrics.json").exists() and not args.overwrite:
         raise FileExistsError(f"Refusing to overwrite {output_directory}")
-    for source_directory in (REPO_ROOT, REPO_ROOT / "scripts"):
+    for source_directory in (REPO_ROOT, REPO_ROOT / "scripts/eval"):
         if str(source_directory) not in sys.path:
             sys.path.insert(0, str(source_directory))
-    from scripts.eval import build_adapter, resolve_path
+    from scripts.eval.eval import build_adapter, resolve_path
 
     cfg = OmegaConf.load(args.config)
     OmegaConf.resolve(cfg)
@@ -540,7 +544,7 @@ def main() -> None:
         seed=args.seed,
     )
     unfiltered_window_count = len(windows)
-    if args.environment == "manipulator_insert_peg":
+    if args.environment == "insert_peg":
         windows = _filter_insert_peg_windows(dataset, windows)
     layers: tuple[int | str, ...] = (0, 1, 2, 3, 4, 5, "final")
     factual_batches = {str(layer): [] for layer in layers}
@@ -655,7 +659,7 @@ def main() -> None:
                     ),
                     "bias_axis": "peg_target_distance_after_grip",
                 }
-                if args.environment == "manipulator_insert_peg"
+                if args.environment == "insert_peg"
                 else {"name": "all_valid_common_time_windows"}
             ),
             "counterfactual_action_statistics": str(action_statistics_path.resolve()),

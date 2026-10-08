@@ -7,9 +7,9 @@ ENVIRONMENTS = {
     "anygoal/CubeDiagonal-v0": (
         "anygoal.envs.cube_diagonal:make_cube_diagonal_env"
     ),
-    "anygoal/ManipulatorInsertPeg-v0": (
-        "anygoal.envs.manipulator_insert_peg:"
-        "make_manipulator_insert_peg_env"
+    "anygoal/InsertPeg-v0": (
+        "anygoal.envs.insert_peg:"
+        "make_insert_peg_env"
     ),
     "anygoal/StackT-v2": "anygoal.envs.stack_t:make_stackt_v2_env",
     "anygoal/TwoRoom-Tri-v1": (

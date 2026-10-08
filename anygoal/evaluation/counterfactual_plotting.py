@@ -12,7 +12,7 @@ GRID_ENVIRONMENTS = (
     ("tworoom", "default", "corridor_center_distance", "TwoRoom"),
     ("pusht", "default", "agent_object_distance", "Push-T"),
     (
-        "manipulator_insert_peg",
+        "insert_peg",
         "default",
         "peg_target_distance_after_grip",
         "Insert Peg",

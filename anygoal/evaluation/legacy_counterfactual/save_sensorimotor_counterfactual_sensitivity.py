@@ -14,14 +14,14 @@ from omegaconf import OmegaConf
 import save_counterfactual_sensitivity as base
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 PLANNING_DIR = (
     REPO_ROOT / "worldmodels" / "sensorimotor-world-model" / "planning"
 )
 RESULTS_DIR = (
     REPO_ROOT
-    / "paper"
-    / "results"
+    / "outputs"
+    / "analysis"
     / "counterfactual_sensitivity"
     / "sensorimotor"
 )

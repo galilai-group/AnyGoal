@@ -1,0 +1,42 @@
+name: pusht
+dataset_name: pusht_expert_train.h5
+cache_dir: null
+frameskip: 5
+state_dim: 10
+action_dim: 2
+normalization_path: scripts/train/config/toy_predictors/statistics/pusht_expert_train_10d.json
+extra_validation_sets:
+  avoidt:
+    dataset_name: avoidt_test.h5
+    percentage: 100.0
+    seed: ${seed}
+    cache_dir: null
+    frameskip: ${data.frameskip}
+    keys_to_load: [state, action]
+    keys_to_cache: [state, action]
+    adapter:
+      _target_: anygoal.datasets.PushTTrueStateAdapter
+      goal_position: [256.0, 256.0]
+      goal_angle: 0.7853981633974483
+  stackt:
+    dataset_name: stackt_test.h5
+    percentage: 100.0
+    seed: ${seed}
+    cache_dir: null
+    frameskip: ${data.frameskip}
+    keys_to_load: [state, action]
+    keys_to_cache: [state, action]
+    adapter:
+      _target_: anygoal.datasets.PushTTrueStateAdapter
+      goal_position: [256.0, 256.0]
+      goal_angle: 0.7853981633974483
+keys_to_load:
+  - state
+  - action
+keys_to_cache:
+  - state
+  - action
+adapter:
+  _target_: anygoal.datasets.PushTTrueStateAdapter
+  goal_position: [256.0, 256.0]
+  goal_angle: 0.7853981633974483

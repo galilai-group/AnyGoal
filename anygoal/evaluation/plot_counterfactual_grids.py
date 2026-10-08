@@ -49,7 +49,7 @@ def render_counterfactual_grids(
             for environment, protocol, bias_axis, title in GRID_ENVIRONMENTS:
                 root = (
                     insert_peg_root
-                    if environment == "manipulator_insert_peg"
+                    if environment == "insert_peg"
                     else input_root
                 )
                 environment_directory = root / model / environment

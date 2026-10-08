@@ -275,9 +275,14 @@ class DriftWorldHDF5Dataset(torch.utils.data.Dataset):
     ) -> None:
         if pred_horizon < 1 or frameskip < 1:
             raise ValueError("pred_horizon and frameskip must be positive.")
+        dataset_path = Path(name).expanduser()
+        location = (
+            {"path": dataset_path}
+            if dataset_path.is_absolute() or dataset_path.suffix in {".h5", ".hdf5"}
+            else {"name": name, "cache_dir": Path(cache_dir).expanduser()}
+        )
         self.dataset = swm.data.HDF5Dataset(
-            name,
-            cache_dir=Path(cache_dir).expanduser(),
+            **location,
             frameskip=int(frameskip),
             num_steps=int(pred_horizon),
             keys_to_load=["pixels", "action"],

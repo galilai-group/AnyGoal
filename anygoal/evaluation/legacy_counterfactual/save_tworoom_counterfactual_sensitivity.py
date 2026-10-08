@@ -18,7 +18,7 @@ from omegaconf import OmegaConf
 from torch.utils.data import DataLoader
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_ROOT = SCRIPT_DIR.parents[1]
+REPO_ROOT = SCRIPT_DIR.parents[2]
 for source_dir in (SCRIPT_DIR, REPO_ROOT):
     if str(source_dir) not in sys.path:
         sys.path.insert(0, str(source_dir))
@@ -35,24 +35,20 @@ DATASET_PATH = Path.home() / ".stable_worldmodel" / "datasets" / "tworoom.h5"
 LEWM_CHECKPOINT = (
     Path.home()
     / ".stable_worldmodel"
-    / "checkpoints"
-    / "tworoom"
-    / "lewm_object.ckpt"
+    / "anygoal"
+    / "lewm_tworoom.ckpt"
 )
 ADALN_CHECKPOINT = (
-    checkpoint_root()
-    / "toy_predictors_20260825_tworoom_toy_predictors"
-    / "20260825_tworoom_essential_adaln"
-    / "weights_epoch_100.pt"
+    Path.home() / ".stable_worldmodel/anygoal/toy-adaln_tworoom.pt"
 )
 ACTION_SET_PATH = (
     REPO_ROOT
-    / "paper"
-    / "results"
+    / "outputs"
+    / "analysis"
     / "tworoom_counterfactual_sensitivity"
     / "tworoom_counterfactual_actions.json"
 )
-OUTPUT_DIR = REPO_ROOT / "paper" / "results" / "tworoom_counterfactual_sensitivity"
+OUTPUT_DIR = REPO_ROOT / "outputs/analysis/tworoom_counterfactual_sensitivity"
 
 
 class TwoRoomTransform:

@@ -1,0 +1,60 @@
+model:
+  checkpoint: ~/.stable_worldmodel/anygoal/irasim_cube.pt
+  vae_model_path: stabilityai/stable-diffusion-xl-base-1.0
+  vae_subfolder: vae
+  scheduler_path: ~/.cache/anygoal/sources/IRASim/pretrained_models/scheduler
+  beta_start: 0.0001
+  beta_end: 0.02
+  beta_schedule: linear
+  variance_type: learned_range
+  inference_steps: 50
+  guidance_scale: 1.0
+  action_frameskip: 5
+  num_history_frames: 3
+  rollout_batch_size: 1
+  num_rollout_samples: 1
+  rollout_seed: 0
+  cost_type: pixel_mse
+
+dataset:
+  root: ~/.stable_worldmodel
+  keys_to_cache: [action]
+
+world:
+  env_name: anygoal/CubeHop-v0
+  max_episode_steps: 100
+  env_type: single
+  ob_type: states
+  multiview: false
+  width: 224
+  height: 224
+  visualize_info: false
+  terminate_at_goal: true
+  evaluation_ee_position_tolerance: 0.04
+  evaluation_ee_yaw_tolerance: 0.10
+  evaluation_cube_position_tolerance: 0.04
+
+seed: {task: 0, policy: 0}
+
+plan_config:
+  horizon: 5
+  receding_horizon: 5
+  history_len: 3
+  action_block: 5
+  warm_start: true
+
+solver: {batch_size: 1, num_samples: 16, var_scale: 1.0, n_steps: 2, topk: 4}
+
+eval:
+  num_eval: 50
+  goal_offset_steps: 25
+  eval_budget: 50
+  render_size: 224
+  dataset_name: cube_single_expert
+  callables:
+    - method: set_state
+      args:
+        qpos: {value: qpos}
+        qvel: {value: qvel}
+
+output: {directory: outputs/irasim/cube_hop_from_cube, save_video: false}

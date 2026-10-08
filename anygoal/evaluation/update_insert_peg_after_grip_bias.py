@@ -114,7 +114,7 @@ def main() -> None:
     parser.add_argument(
         "--dataset",
         type=Path,
-        default=data_root() / "manipulator_insert_peg_weak_expert_train.h5",
+        default=data_root() / "insert_peg_weak_expert_train.h5",
     )
     parser.add_argument(
         "--results-root",
@@ -125,7 +125,7 @@ def main() -> None:
     args = parser.parse_args()
     bias = collect_selected_bias(args.dataset)
     for model in MODEL_NAMES:
-        result_directory = args.results_root / model / "manipulator_insert_peg"
+        result_directory = args.results_root / model / "insert_peg"
         update_result(result_directory, bias)
         print(f"updated {result_directory}")
 

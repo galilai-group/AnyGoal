@@ -36,7 +36,6 @@ Install optional environment, training, or analysis dependencies as needed:
 pip install 'anygoal[env]'
 pip install 'anygoal[train]'
 pip install 'anygoal[analysis]'
-pip install 'anygoal[paper]'
 ```
 
 The wheel contains the public API, registries, schemas, validation, generic
@@ -60,7 +59,7 @@ dataset IDs are:
 ```text
 pusht, avoidt, stackt, pusht-antigoal,
 cube, cubehop, cubediagonal,
-insertpeg, hug_box, extractpeg,
+insertpeg, avoid_peg, extractpeg,
 tworoom, tworoom_route
 ```
 
@@ -98,30 +97,40 @@ git -C worldmodels/IRASim/stylegan-v \
 
 ## Data
 
-Generated variants use their registered collector. The publication preset
-preserves the recorded publication recipe and seeds; the smoke preset only
-reduces the number of episodes/environments. CubeDiagonal's former 50+350
-launcher sequence is reproduced and merged by the one command below.
+Generated variants use their registered in-package collector. Omitted options
+use that dataset's declared defaults, while Python keyword names map directly
+to the corresponding hyphenated CLI options.
 
-```bash
-anygoal data collect avoidt --preset smoke --dry-run
-anygoal data collect cubediagonal --output /path/to/cubediagonal.h5
+The Python and terminal interfaces call the same in-package collector:
+
+```python
+import anygoal
+
+dataset = anygoal.collect(
+    "avoidt",
+    num_episodes=400,
+    num_parallel=8,
+    seed=0,
+)
 ```
 
-Base datasets whose canonical source is upstream are imported explicitly and
-validated before copying:
+```bash
+anygoal collect avoidt --num-episodes 400 --num-parallel 8
+anygoal collect cubediagonal --output /path/to/cubediagonal.h5
+```
+
+Base datasets (`pusht`, `cube`, `insertpeg`, and `tworoom`) are distributed as
+HDF5 files rather than reconstructed by AnyGoal collectors. Download them from
+the published Hugging Face dataset repository, then validate them in place:
 
 ```bash
-anygoal data collect pusht \
-  --source /download/pusht_expert_train.h5 \
-  --output ~/.stable_worldmodel/datasets/pusht_expert_train.h5
-
 anygoal data validate ~/.stable_worldmodel/datasets/pusht_expert_train.h5 \
   --dataset pusht
 ```
 
-Collectors and imports refuse to overwrite by default. See
-[`datasets.md`](datasets.md) for canonical filenames.
+Collectors refuse to overwrite by default. Canonical filenames are
+recorded in [`anygoal/resources/catalog.yaml`](anygoal/resources/catalog.yaml);
+the shared workspace inventory remains in `../unstable-worldmodel/datasets.md`.
 
 ## Train and evaluate
 
@@ -130,9 +139,13 @@ implementation without changing its model code, hyperparameters, seeds, data
 alignment, or normalization:
 
 ```bash
-anygoal train driftworld --dataset pusht --dry-run
+anygoal train driftworld \
+  --data ~/.stable_worldmodel/datasets/pusht_expert_train.h5 \
+  --task pusht --dry-run
 
-anygoal train sensorimotor --dataset insertpeg --dry-run
+anygoal train irasim \
+  --data ~/.stable_worldmodel/datasets/insert_peg_weak_expert_train.h5 \
+  --task insert_peg --dry-run
 
 anygoal eval prediction \
   --model driftworld --dataset avoidt --seed 0 --dry-run
@@ -144,10 +157,21 @@ anygoal eval counterfactual \
   --model lewm --dataset pusht --seed 0 --dry-run
 ```
 
-Remove `--dry-run` after checking resolved paths. Use `--checkpoint` and
-`--model-config` to override the catalog/config defaults. The current research
-artifact paths are recorded in [`checkpoints.md`](checkpoints.md); public URLs,
-licenses, and hashes still need to be supplied before release.
+Remove `--dry-run` after checking resolved paths. Training accepts common
+overrides such as `--learning-rate`, `--batch-size`, `--seed`, and
+`--num-workers`; omitted values remain exactly as defined by the selected
+model/task profile. `--task` is always required; when the HDF5 filename or
+metadata identifies the task, AnyGoal also checks that identity against the
+explicit value. Verified profiles cover all four base tasks for LeWM,
+Sensorimotor, PreJEPA, DriftWorld, IRASim, and the three toy predictors. LeWM
+and PreJEPA training on PushT, Cube, or TwoRoom emits a warning because the
+paper used the official released checkpoints for those combinations.
+Evaluation accepts
+`--checkpoint` and `--model-config`.
+The current research
+artifact paths are recorded in the shared workspace inventory at
+`../unstable-worldmodel/checkpoints.md`; public URLs, licenses, and hashes still
+need to be supplied before release.
 
 ## Visualize
 
@@ -167,8 +191,14 @@ output format for every registered visualizer.
 
 ## Site, W&B, and Slurm configuration
 
-Copy [`configs/site/example.yaml`](configs/site/example.yaml) to
-`~/.config/anygoal/site.yaml`. Configuration precedence is:
+An optional site configuration can be generated from the package defaults:
+
+```bash
+mkdir -p ~/.config/anygoal
+anygoal config show > ~/.config/anygoal/site.yaml
+```
+
+Configuration precedence is:
 
 ```text
 CLI override > experiment config > user/site config > package defaults
@@ -180,19 +210,20 @@ former model/GPU/seed-specific launchers:
 
 ```bash
 anygoal submit --preset gpu-train --job-name driftworld-pusht --dry-run -- \
-  anygoal train driftworld --dataset pusht
+  anygoal train driftworld \
+    --data ~/.stable_worldmodel/datasets/pusht_expert_train.h5 --task pusht
 ```
 
 Remove `--dry-run` to call `sbatch`. See [`slurm/README.md`](slurm/README.md).
 
-## Paper matrix
+## Evaluation matrix
 
-[`paper/manifest.yaml`](paper/manifest.yaml) records the prediction and planning
+[`scripts/analysis/manifest.yaml`](scripts/analysis/manifest.yaml) records the prediction and planning
 matrix without one launcher per combination:
 
 ```bash
-anygoal reproduce paper/manifest.yaml
-anygoal reproduce paper/manifest.yaml --submit --site ~/.config/anygoal/site.yaml
+anygoal reproduce scripts/analysis/manifest.yaml
+anygoal reproduce scripts/analysis/manifest.yaml --submit --site ~/.config/anygoal/site.yaml
 ```
 
 The first command only prints commands. Submission is also a dry run unless
@@ -201,13 +232,27 @@ The first command only prints commands. Submission is also a dry run unless
 ## Python API and extensions
 
 ```python
+import anygoal
 from anygoal import get_registry
 from anygoal.datasets import validate_hdf5
 
 registry = get_registry()
 dataset = registry.dataset("cube_diagonal")
 report = validate_hdf5("/path/to/cube_diagonal_test.h5", dataset_id=dataset.id)
+
+model, result = anygoal.train(
+    "driftworld",
+    data="/path/to/pusht_expert_train.h5",
+    task="pusht",
+)
 ```
+
+`data` may be a local Stable World-Model HDF5 path or an HDF5 dataset object.
+The returned `model` is the reloaded, evaluation-mode model, while `result`
+records the checkpoint, resolved config, command, and run directory. Common
+arguments use the signature above; model-specific nested options use double
+underscores in Python (for example, `visualization__enabled=False`) or dotted
+`key=value` arguments in the CLI.
 
 Third-party packages can register datasets, models, and visualizers through the
 `anygoal.datasets`, `anygoal.models`, and `anygoal.visualizers` entry-point

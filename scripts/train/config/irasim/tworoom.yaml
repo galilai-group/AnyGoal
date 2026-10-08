@@ -1,0 +1,54 @@
+# Keep IRASim's original Language-Table branch and select StableWM H5 separately.
+dataset: languagetable
+h5_dataset_name: tworoom
+h5_dataset_root: ${oc.env:IRASIM_DATA_ROOT,'~/.stable_worldmodel'}
+validation_fraction: 0.05
+max_samples: 300000
+max_validation_samples: 100
+
+frameskip: 5
+# Reciprocal finite-action standard deviations measured from tworoom.h5.
+action_scale: [1.152675, 1.151227]
+action_dim: 2
+sequence_interval: 1
+val_start_frame_interval: 16
+cam_ids: [0]
+accumulate_action: false
+pre_encode: false
+normalize: true
+mode: val
+
+anno: irasim_tworoom_h5_frameskip5
+debug: false
+do_evaluate: false
+final_frame_ada: false
+evaluate_checkpoint: false
+
+model: IRASim-XL/2
+history_frames: 3
+future_frames: 1
+num_frames: 4
+video_size: [224, 224]
+learn_sigma: false
+extras: 3
+mask_frame_num: 3
+attention_mode: math
+
+learning_rate: 1.0e-4
+ckpt_every: 50000
+clip_max_norm: 0.1
+start_clip_iter: 0
+local_batch_size: 1
+local_val_batch_size: 1
+max_train_steps: 300000
+global_seed: 3407
+num_workers: 11
+log_every: 100
+val_every: 10000
+gradient_accumulation_steps: 1
+resume_from_checkpoint: false
+
+project_dir: ""
+results_dir: ${oc.env:IRASIM_CHECKPOINT_ROOT,'~/.cache/anygoal/checkpoints'}
+vae_model_path: ${oc.env:IRASIM_VAE_PATH,stabilityai/stable-diffusion-xl-base-1.0}
+scheduler_path: ${oc.env:IRASIM_SCHEDULER_PATH,'worldmodels/IRASim/pretrained_models/scheduler'}

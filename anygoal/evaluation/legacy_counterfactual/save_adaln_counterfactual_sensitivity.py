@@ -17,7 +17,7 @@ from omegaconf import OmegaConf
 from torch.utils.data import DataLoader
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_ROOT = SCRIPT_DIR.parents[1]
+REPO_ROOT = SCRIPT_DIR.parents[2]
 for source_dir in (SCRIPT_DIR, REPO_ROOT):
     if str(source_dir) not in sys.path:
         sys.path.insert(0, str(source_dir))
@@ -29,13 +29,10 @@ from anygoal.paths import checkpoint_root  # noqa: E402
 
 
 DEFAULT_CHECKPOINT = (
-    checkpoint_root()
-    / "toy_predictors_20260723_frameskip5_10d"
-    / "20260723_pusht_adaln"
-    / "weights_epoch_100.pt"
+    Path.home() / ".stable_worldmodel/anygoal/toy-adaln_pusht.pt"
 )
 DEFAULT_OUTPUT_DIR = (
-    REPO_ROOT / "paper" / "results" / "counterfactual_sensitivity" / "adaln"
+    REPO_ROOT / "outputs" / "analysis" / "counterfactual_sensitivity" / "adaln"
 )
 
 

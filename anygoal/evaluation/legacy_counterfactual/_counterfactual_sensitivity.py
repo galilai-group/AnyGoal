@@ -26,7 +26,7 @@ def find_latest_metadata() -> Path:
     )
     if not candidates:
         raise FileNotFoundError(
-            "No counterfactual metadata found under paper/results. Run "
+            "No counterfactual metadata found under outputs/analysis. Run "
             "save_counterfactual_sensitivity.py first or pass --metadata."
         )
     return max(candidates, key=lambda path: path.stat().st_mtime)

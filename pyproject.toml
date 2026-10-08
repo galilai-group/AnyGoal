@@ -6,13 +6,15 @@ readme = "README.md"
 requires-python = ">=3.10"
 
 dependencies = [
-    "stable-worldmodel>=0.1.1,<0.2.0",
+    "stable-worldmodel[env,format]>=0.1.1,<0.2.0",
     "h5py",
     "hdf5plugin",
     "numpy",
     "scipy",
     "tqdm",
     "PyYAML>=6",
+    "imageio>=2.31",
+    "Pillow",
 ]
 
 [project.scripts]
@@ -25,6 +27,7 @@ env = [
 
 train = [
     "stable-worldmodel[train,format]>=0.1.1,<0.2.0",
+    "accelerate>=1.15,<2",
 ]
 
 paper = [
@@ -44,12 +47,16 @@ analysis = [
 ]
 
 dev = [
+    "build==1.6.1",
     "pytest",
     "ruff",
-    "build",
     "twine",
 ]
 
 [build-system]
 requires = ["hatchling==1.32.4"]
 build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

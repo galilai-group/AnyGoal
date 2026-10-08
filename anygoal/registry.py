@@ -38,6 +38,7 @@ class ModelSpec:
     training_config_dir: str | None
     training_config_suffix: str
     trainer_config_style: str
+    training_profiles: Mapping[str, str | None]
     planning_config_dir: str
     planning_config_suffix: str
     planner_config_style: str
@@ -110,6 +111,7 @@ class Registry:
                 training_config_dir=item.get("training_config_dir"),
                 training_config_suffix=item.get("training_config_suffix", ""),
                 trainer_config_style=item.get("trainer_config_style", "hydra"),
+                training_profiles=dict(item.get("training_profiles", {})),
                 planning_config_dir=item.get("planning_config_dir", item_id),
                 planning_config_suffix=item.get("planning_config_suffix", ""),
                 planner_config_style=item.get("planner_config_style", "hydra"),
@@ -176,8 +178,18 @@ class Registry:
                 )
             if model.planner_seed_style not in {"argparse", "override", "triple"}:
                 raise ValueError(f"Model {model.id!r} has invalid planner_seed_style.")
+            unknown_profiles = set(model.training_profiles) - set(self.datasets)
+            if unknown_profiles:
+                raise ValueError(
+                    f"Model {model.id!r} has training profiles for unknown tasks: "
+                    f"{sorted(unknown_profiles)}"
+                )
+            if model.training_profiles and "train" not in model.capabilities:
+                raise ValueError(
+                    f"Model {model.id!r} declares profiles without train capability."
+                )
         for dataset in self.datasets.values():
-            if dataset.source not in {"generated", "import"}:
+            if dataset.source not in {"generated", "external"}:
                 raise ValueError(f"Dataset {dataset.id!r} has invalid source.")
             if dataset.source == "generated" and not dataset.collector:
                 raise ValueError(f"Generated dataset {dataset.id!r} needs a collector.")
