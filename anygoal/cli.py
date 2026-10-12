@@ -1,10 +1,9 @@
-"""Command-line entry point for datasets, models, evaluation, and visualization."""
+"""Command-line entry point for data, model sources, training, and evaluation."""
 
 from __future__ import annotations
 
 import argparse
 import json
-import os
 import shlex
 import subprocess
 import sys
@@ -19,34 +18,18 @@ from anygoal.config import load_config
 from anygoal.collection import collect_from_cli
 from anygoal.datasets.validation import validate_hdf5
 from anygoal.registry import DatasetSpec, ModelSpec, get_registry
+from anygoal.resources import resource_path
 from anygoal.version import __version__
-
-
-def _repository_root() -> Path:
-    configured = os.environ.get("ANYGOAL_REPOSITORY")
-    candidates = [Path(configured)] if configured else []
-    candidates.extend([Path.cwd(), *Path.cwd().parents, Path(__file__).resolve().parents[1]])
-    for candidate in candidates:
-        if (
-            (candidate / "pyproject.toml").is_file()
-            and (candidate / "anygoal").is_dir()
-            and (candidate / "scripts").is_dir()
-        ):
-            return candidate.resolve()
-    raise RuntimeError(
-        "This operation needs the research source checkout. Set ANYGOAL_REPOSITORY "
-        "to its root; registry, validation, and visualization remain wheel-only APIs."
-    )
 
 
 def _clean_remainder(arguments: Sequence[str]) -> list[str]:
     return [argument for argument in arguments if argument != "--"]
 
 
-def _python_command(root: Path, target: str) -> list[str]:
-    """Resolve a checkout-relative script or an installed Python module."""
+def _python_command(target: str) -> list[str]:
+    """Resolve an explicit script or an installed Python module."""
     if target.endswith(".py"):
-        return [sys.executable, str(root / target)]
+        return [sys.executable, str(Path(target).expanduser().resolve())]
     return [sys.executable, "-m", target]
 
 
@@ -55,7 +38,9 @@ def _execute(command: Sequence[str], *, dry_run: bool, cwd: Path | None = None) 
     if dry_run:
         print(printable)
         return 0
-    return subprocess.run([str(part) for part in command], cwd=cwd, check=False).returncode
+    return subprocess.run(
+        [str(part) for part in command], cwd=cwd, check=False
+    ).returncode
 
 
 def _run_collect(args: argparse.Namespace) -> int:
@@ -75,7 +60,9 @@ def _run_validate(args: argparse.Namespace) -> int:
         print(json.dumps(payload, indent=2))
     else:
         print(f"valid={report.valid} path={report.path}")
-        print(f"keys={','.join(report.keys)} rows={report.rows} episodes={report.episodes}")
+        print(
+            f"keys={','.join(report.keys)} rows={report.rows} episodes={report.episodes}"
+        )
         for issue in report.issues:
             print(f"{issue.level}: {issue.message}")
     return 0 if report.valid else 1
@@ -103,9 +90,7 @@ def _run_train(args: argparse.Namespace) -> int:
         **model_options,
     )
     if args.dry_run:
-        plan = prepare_training(
-            args.model_id, data=args.data, task=args.task, **common
-        )
+        plan = prepare_training(args.model_id, data=args.data, task=args.task, **common)
         print(plan.shell_command())
         return 0
     _, result = train(
@@ -119,15 +104,12 @@ def _run_train(args: argparse.Namespace) -> int:
     return 0
 
 
-def _planning_config(root: Path, model: ModelSpec, dataset: DatasetSpec) -> Path:
+def _planning_config(model: ModelSpec, dataset: DatasetSpec) -> Path:
     stem = dataset.planning_stems.get(model.id, dataset.config_stem)
-    return (
-        root
-        / "scripts"
-        / "plan"
-        / "config"
-        / model.planning_config_dir
-        / f"{stem}{model.planning_config_suffix}.yaml"
+    return resource_path(
+        "plan",
+        model.planning_config_dir,
+        f"{stem}{model.planning_config_suffix}.yaml",
     )
 
 
@@ -136,12 +118,13 @@ def _run_eval(args: argparse.Namespace) -> int:
     model = registry.model(args.model_id)
     dataset = registry.dataset(args.dataset_id)
     if dataset.family not in model.families:
-        raise ValueError(f"{model.id} does not declare support for {dataset.family} datasets.")
-    root = _repository_root()
+        raise ValueError(
+            f"{model.id} does not declare support for {dataset.family} datasets."
+        )
     extra = _clean_remainder(args.arguments)
     if args.eval_kind == "rollout":
         command = [
-            *_python_command(root, model.rollout_runner),
+            *_python_command(model.rollout_runner),
             "--model",
             model.evaluation_id,
             "--environment",
@@ -150,9 +133,11 @@ def _run_eval(args: argparse.Namespace) -> int:
             str(args.seed),
         ]
         if args.checkpoint:
-            command.extend(["--checkpoint", str(args.checkpoint.expanduser().resolve())])
+            command.extend(
+                ["--checkpoint", str(args.checkpoint.expanduser().resolve())]
+            )
     else:
-        config = args.model_config or _planning_config(root, model, dataset)
+        config = args.model_config or _planning_config(model, dataset)
         if not config.is_file():
             raise FileNotFoundError(
                 f"No verified planning config for this combination: {config}. "
@@ -160,14 +145,14 @@ def _run_eval(args: argparse.Namespace) -> int:
             )
         if model.planner_config_style == "hydra":
             command = [
-                *_python_command(root, model.planner),
+                *_python_command(model.planner),
                 f"--config-path={config.parent}",
                 f"--config-name={config.stem}",
             ]
             if model.planner_seed_style == "override":
                 extra.append(f"seed={args.seed}")
         else:
-            command = [*_python_command(root, model.planner), "--config", str(config)]
+            command = [*_python_command(model.planner), "--config", str(config)]
             if model.planner_seed_style == "argparse":
                 command.extend(["--seed", str(args.seed)])
             elif model.planner_seed_style == "triple":
@@ -186,7 +171,7 @@ def _run_eval(args: argparse.Namespace) -> int:
                 f"{args.checkpoint.expanduser().resolve()}"
             )
     command.extend(extra)
-    return _execute(command, dry_run=args.dry_run, cwd=root)
+    return _execute(command, dry_run=args.dry_run)
 
 
 def _run_visualize(args: argparse.Namespace) -> int:
@@ -195,14 +180,14 @@ def _run_visualize(args: argparse.Namespace) -> int:
         if args.input is None or args.output is None:
             raise ValueError(f"{args.visualizer_id} requires --input and --output.")
         command = [
-            *_python_command(_repository_root(), spec.runner),
+            *_python_command(spec.runner),
             spec.input_option,
             str(args.input),
             spec.output_option,
             str(args.output),
             *_clean_remainder(args.arguments),
         ]
-        return _execute(command, dry_run=args.dry_run, cwd=_repository_root())
+        return _execute(command, dry_run=args.dry_run)
     raise ValueError(f"{spec.id} does not declare an executable runner.")
 
 
@@ -212,12 +197,33 @@ def _run_list(args: argparse.Namespace) -> int:
     for item_id in sorted(collection):
         item = collection[item_id]
         if args.kind == "datasets":
-            print(f"{item.id:22} family={item.family:11} source={item.source:9} {item.filename}")
+            print(
+                f"{item.id:22} family={item.family:11} source={item.source:9} {item.filename}"
+            )
         elif args.kind == "models":
             print(f"{item.id:22} capabilities={','.join(sorted(item.capabilities))}")
         else:
             required = "; ".join(item.required_inputs)
             print(f"{item.id:22} requires: {required}; output: {item.output}")
+    return 0
+
+
+def _run_models(args: argparse.Namespace) -> int:
+    from anygoal.sources import get_sources, install_source, source_status
+
+    source_ids = sorted({spec.id for spec in get_sources().values()})
+    selected = source_ids if getattr(args, "all", False) else [args.model_id]
+    for model_id in selected:
+        status = (
+            install_source(model_id)
+            if args.models_command == "install"
+            else source_status(model_id)
+        )
+        revision = status.revision or "-"
+        print(
+            f"{status.source.id:14} {status.state:10} "
+            f"revision={revision} path={status.path}"
+        )
     return 0
 
 
@@ -250,27 +256,58 @@ def _run_reproduce(args: argparse.Namespace) -> int:
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="anygoal", description=__doc__)
-    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {__version__}"
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     list_parser = subparsers.add_parser("list", help="List registered integrations.")
     list_parser.add_argument("kind", choices=("datasets", "models", "visualizers"))
     list_parser.set_defaults(handler=_run_list)
 
-    config_parser = subparsers.add_parser("config", help="Inspect merged configuration.")
+    models_parser = subparsers.add_parser(
+        "models", help="Install or inspect pinned original model sources."
+    )
+    models_subparsers = models_parser.add_subparsers(
+        dest="models_command", required=True
+    )
+    models_list = models_subparsers.add_parser("list", help="List source status.")
+    models_list.set_defaults(handler=_run_models, all=True)
+    models_status = models_subparsers.add_parser(
+        "status", help="Show one source status."
+    )
+    models_status.add_argument("model_id")
+    models_status.set_defaults(handler=_run_models, all=False)
+    models_install = models_subparsers.add_parser(
+        "install", help="Download a pinned original source checkout."
+    )
+    install_target = models_install.add_mutually_exclusive_group(required=True)
+    install_target.add_argument("model_id", nargs="?")
+    install_target.add_argument("--all", action="store_true")
+    models_install.set_defaults(handler=_run_models)
+
+    config_parser = subparsers.add_parser(
+        "config", help="Inspect merged configuration."
+    )
     config_parser.add_argument("action", choices=("show",))
     config_parser.add_argument("--site", type=Path)
     config_parser.add_argument("--config", type=Path, help="Experiment config.")
     config_parser.set_defaults(
-        handler=lambda args: print(
-            yaml.safe_dump(load_config(site=args.site, experiment=args.config), sort_keys=False)
+        handler=lambda args: (
+            print(
+                yaml.safe_dump(
+                    load_config(site=args.site, experiment=args.config), sort_keys=False
+                )
+            )
+            or 0
         )
-        or 0
     )
 
     data_parser = subparsers.add_parser("data", help="Validate data.")
     data_subparsers = data_parser.add_subparsers(dest="data_command", required=True)
-    validate = data_subparsers.add_parser("validate", help="Validate common HDF5 invariants.")
+    validate = data_subparsers.add_parser(
+        "validate", help="Validate common HDF5 invariants."
+    )
     validate.add_argument("path", type=Path)
     validate.add_argument("--dataset", dest="dataset_id")
     validate.add_argument("--json", action="store_true")
@@ -347,7 +384,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         return int(args.handler(args))
     except BrokenPipeError:
         return 0
-    except (FileNotFoundError, KeyError, RuntimeError, ValueError) as error:
+    except (
+        FileExistsError,
+        FileNotFoundError,
+        KeyError,
+        RuntimeError,
+        ValueError,
+    ) as error:
         parser.error(str(error))
         return 2
 

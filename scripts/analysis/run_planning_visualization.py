@@ -7,6 +7,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+from anygoal.resources import resource_path
+from anygoal.sources import source_path
+
 ROOT = Path(__file__).resolve().parents[2]
 CKPT = Path.home() / ".stable_worldmodel/anygoal"
 OLD_CKPT = Path("/grid/klindt/home/nam/ckpt")
@@ -157,7 +160,7 @@ def make_command(model, dataset):
             sys.executable,
             str(ROOT / "scripts/plan/planning_sensorimotor.py"),
             "--config",
-            str(ROOT / f"scripts/plan/config/sensorimotor/{stem}.yaml"),
+            str(resource_path("plan", "sensorimotor", f"{stem}.yaml")),
             "--seed",
             "0",
             "--",
@@ -176,7 +179,7 @@ def make_command(model, dataset):
         )
         extra = (
             [
-                f"model.scheduler_path={ROOT / 'worldmodels/IRASim/pretrained_models/scheduler'}"
+                f"model.scheduler_path={source_path('irasim') / 'pretrained_models/scheduler'}"
             ]
             if model == "irasim"
             else []
@@ -185,7 +188,7 @@ def make_command(model, dataset):
             sys.executable,
             str(ROOT / f"scripts/plan/planning_{model}.py"),
             "--config",
-            str(ROOT / f"scripts/plan/config/{model}/{config_stem}.yaml"),
+            str(resource_path("plan", model, f"{config_stem}.yaml")),
             "--",
             *common,
             f"model.checkpoint={CKPT / BASE[model][family]}",
@@ -230,5 +233,5 @@ if __name__ == "__main__":
     env["PYTHONPATH"] = str(ROOT) + (
         ":" + env["PYTHONPATH"] if env.get("PYTHONPATH") else ""
     )
-    env.setdefault("LEWM_SOURCE_ROOT", str(ROOT / "worldmodels/lewm"))
+    env.setdefault("LEWM_SOURCE_ROOT", str(source_path("lewm")))
     subprocess.run(cmd, cwd=ROOT, env=env, check=True)

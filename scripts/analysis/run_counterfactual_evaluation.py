@@ -17,6 +17,7 @@ from anygoal.evaluation._rollout_adapters import (
     TrueStateRolloutAdapter,
     standardize_action_blocks,
 )
+from anygoal.resources import resource_path
 from scripts.analysis.counterfactual_metrics import (
     counterfactual_sensitivity_uniformity,
     factual_output_variation,
@@ -25,7 +26,7 @@ from scripts.analysis.counterfactual_metrics import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-STATISTICS_DIRECTORY = REPO_ROOT / "anygoal" / "resources" / "counterfactual"
+STATISTICS_DIRECTORY = resource_path("counterfactual")
 MODEL_NAMES = ("lewm", "sensorimotor", "adaln_predictor")
 ENVIRONMENTS = ("pusht", "cube", "tworoom", "insert_peg")
 COUNTERFACTUAL_CHUNK_SIZE = 4
@@ -479,7 +480,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "scripts/eval/config/rollout_eval.yaml",
+        default=resource_path("eval", "rollout.yaml"),
     )
     parser.add_argument(
         "--output-root",

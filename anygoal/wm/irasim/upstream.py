@@ -14,15 +14,20 @@ from pathlib import Path
 from torch import nn
 
 from .data import get_irasim_hdf5_datasets
+from anygoal.sources import source_path
 
 
 def irasim_source_root() -> Path:
-    default = Path(__file__).resolve().parents[3] / "worldmodels" / "IRASim"
-    root = Path(os.environ.get("IRASIM_SOURCE_ROOT", default)).expanduser().resolve()
+    configured = os.environ.get("IRASIM_SOURCE_ROOT")
+    root = (
+        Path(configured).expanduser().resolve()
+        if configured
+        else source_path("irasim")
+    )
     if not (root / "models" / "irasim.py").is_file():
         raise FileNotFoundError(
-            "IRASim source was not found. Set IRASIM_SOURCE_ROOT to the "
-            f"directory containing models/irasim.py: {root}"
+            "IRASim source was not found. Run `anygoal models install irasim` or "
+            f"set IRASIM_SOURCE_ROOT to the directory containing models/irasim.py: {root}"
         )
     return root
 

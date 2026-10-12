@@ -8,13 +8,11 @@ from pathlib import Path
 from stable_worldmodel.data.utils import get_cache_dir
 
 
-REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-
-
-def resolve_path(value: str | Path, *, base: str | Path = REPOSITORY_ROOT) -> Path:
+def resolve_path(value: str | Path, *, base: str | Path | None = None) -> Path:
     """Expand a path, resolving relative values against a caller-selected base."""
     path = Path(str(value)).expanduser()
-    return path if path.is_absolute() else Path(base).expanduser() / path
+    root = Path.cwd() if base is None else Path(base).expanduser()
+    return path if path.is_absolute() else root / path
 
 
 def data_root() -> Path:

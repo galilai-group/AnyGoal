@@ -24,23 +24,26 @@ python -m pip install -r requirements.txt
 package versions used by this repository. It also installs the current AnyGoal
 source checkout in editable mode after resolving the pinned environment.
 
-For the smaller published package API, install from PyPI:
+The default install includes dataset I/O, collection, validation, and the
+simulation environments. The explicit `data` extra is an equivalent alias:
 
 ```bash
 pip install anygoal
+pip install 'anygoal[data]'
 ```
 
-Install optional environment, training, or analysis dependencies as needed:
+Add rollout/planning dependencies for evaluation, or install the complete
+training stack:
 
 ```bash
-pip install 'anygoal[env]'
-pip install 'anygoal[train]'
-pip install 'anygoal[analysis]'
+pip install 'anygoal[eval]'
+pip install 'anygoal[all]'
 ```
 
-The wheel contains the public API, registries, validation, generic
-visualization, and CLI. Research training backends that are not redistributable
-are loaded lazily from a source checkout configured by environment variables.
+`eval` includes the default data functionality, and `all` includes data,
+evaluation, and training. The wheel contains the public API, CLI, runner
+implementations, and their runtime configurations. It does not redistribute
+third-party model repositories.
 
 ## Discover the API
 
@@ -71,29 +74,26 @@ toy-adaln, toy-action-duplicate, toy-driftworld
 ```
 
 
-## Download and install the third-party research code
+## Download the original model sources
 
+Evaluation and training integrations use the original upstream repositories.
+Download only the model sources you need; AnyGoal checks out the revisions
+recorded in `anygoal/resources/sources.yaml` under
+`~/.cache/anygoal/sources` and does not run a hidden `pip install`:
 
 ```bash
-git clone git@github.com:galilai-group/AnyGoal.git
-cd AnyGoal
-
-git submodule update --init \
-  worldmodels/driftworld \
-  worldmodels/IRASim \
-  worldmodels/lewm \
-  worldmodels/sensorimotor-world-model
-
-git clone https://github.com/mseitzer/pytorch-fid.git \
-  worldmodels/IRASim/pytorch-fid
-git -C worldmodels/IRASim/pytorch-fid \
-  checkout --detach b9c18118d082cbd263c1b8963fc4221dc1cbb659
-
-git clone https://github.com/universome/stylegan-v.git \
-  worldmodels/IRASim/stylegan-v
-git -C worldmodels/IRASim/stylegan-v \
-  checkout --detach 3fecd69c602e1cda204357201461c0fb0a634909
+anygoal models list
+anygoal models install driftworld
+anygoal models install irasim
+anygoal models install lewm
+anygoal models install sensorimotor
+# Or download all four:
+anygoal models install --all
 ```
+
+For development, an initialized `worldmodels/` submodule at the pinned commit
+is also recognized. Explicit `DRIFTWORLD_SOURCE_ROOT`, `IRASIM_SOURCE_ROOT`,
+`LEWM_SOURCE_ROOT`, and `SENSORIMOTOR_SOURCE_ROOT` overrides take precedence.
 
 ## Data
 
@@ -136,9 +136,9 @@ the shared workspace inventory remains in `../unstable-worldmodel/datasets.md`.
 
 ## Train and evaluate
 
-The public CLI resolves an ID and calls the existing model-specific
-implementation without changing its model code, hyperparameters, seeds, data
-alignment, or normalization:
+The public CLI resolves an ID and calls the installed AnyGoal runner around the
+original model source without changing model math, hyperparameters, seeds,
+data alignment, or normalization:
 
 The exact canonical spellings, accepted aliases, and HDF5 filenames are listed
 in [`scripts/train/training_api_ids.csv`](scripts/train/training_api_ids.csv).

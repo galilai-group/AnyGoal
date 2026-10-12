@@ -21,6 +21,8 @@ from omegaconf import OmegaConf
 
 from anygoal.datasets.validation import validate_hdf5
 from anygoal.registry import DatasetSpec, ModelSpec, get_registry
+from anygoal.resources import resource_path
+from anygoal.sources import source_path
 
 
 BASE_TASKS = {"pusht", "cube", "tworoom", "insertpeg"}
@@ -172,20 +174,6 @@ class TrainingResult:
     elapsed_seconds: float
 
 
-def _repository_root() -> Path:
-    configured = os.environ.get("ANYGOAL_REPOSITORY")
-    candidates = [Path(configured)] if configured else []
-    candidates.extend(
-        [Path.cwd(), *Path.cwd().parents, Path(__file__).resolve().parents[1]]
-    )
-    for candidate in candidates:
-        if (candidate / "pyproject.toml").is_file() and (
-            candidate / "scripts/train"
-        ).is_dir():
-            return candidate.resolve()
-    raise RuntimeError("Training requires an AnyGoal source checkout.")
-
-
 def _data_path(data: str | Path | Any) -> Path:
     raw = getattr(data, "h5_path", data)
     if isinstance(raw, str) and "://" in raw:
@@ -304,7 +292,6 @@ def prepare_training(
     max_epochs: int | None = None,
     **kwargs: Any,
 ) -> TrainingPlan:
-    root = _repository_root()
     registry = get_registry()
     model_spec = registry.model(model)
     data_path = _data_path(data)
@@ -323,7 +310,7 @@ def prepare_training(
             f"No verified training profile for {model_spec.id} x {task_spec.id}."
         )
     profile = model_spec.training_profiles[task_spec.id]
-    config = None if profile is None else (root / profile).resolve()
+    config = None if profile is None else resource_path(*profile.split("/"))
     if config is not None and not config.is_file():
         raise FileNotFoundError(config)
 
@@ -404,7 +391,7 @@ def prepare_training(
             )
         overrides.append(_format_override(key, value))
 
-    command = [sys.executable, str((root / model_spec.trainer).resolve())]
+    command = [sys.executable, "-m", model_spec.trainer]
     if config is not None:
         if model_spec.trainer_config_style == "argparse":
             command.extend(["--config", str(config)])
@@ -547,10 +534,10 @@ def _load_irasim_model(
     device: torch.device,
 ):
     import stable_worldmodel as swm
-    from scripts.plan import planning_irasim
+    from anygoal.runners.plan import planning_irasim
 
     stem = "insert_peg" if task_id == "insertpeg" else task_id
-    planning_config = _repository_root() / f"scripts/plan/config/irasim/{stem}.yaml"
+    planning_config = resource_path("plan", "irasim", f"{stem}.yaml")
     training_config = OmegaConf.load(config_path)
     training_to_planning = {
         "vae_model_path": "model.vae_model_path",
@@ -595,7 +582,7 @@ def _load_prejepa_model(
 
 
 def _load_lewm_model(checkpoint: Path, config_path: Path, device: torch.device):
-    source_root = (_repository_root() / "worldmodels/lewm").resolve()
+    source_root = source_path("lewm")
     previous_modules = {
         name: sys.modules.pop(name, None) for name in ("jepa", "module")
     }
@@ -618,11 +605,9 @@ def _load_lewm_model(checkpoint: Path, config_path: Path, device: torch.device):
 def _load_sensorimotor_model(
     checkpoint: Path, config_path: Path, device: torch.device
 ):
-    from scripts.plan import planning_sensorimotor
+    from anygoal.runners.plan import planning_sensorimotor
 
-    source_root = (
-        _repository_root() / "worldmodels/sensorimotor-world-model/planning"
-    )
+    source_root = source_path("sensorimotor") / "planning"
     return planning_sensorimotor.load_model(
         checkpoint.parent.parent,
         source_root,
@@ -716,7 +701,6 @@ def train(
     environment.update(dict(plan.environment))
     subprocess.run(
         plan.command,
-        cwd=_repository_root(),
         env=environment,
         check=True,
     )

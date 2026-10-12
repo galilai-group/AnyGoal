@@ -14,27 +14,29 @@ from pathlib import Path
 import torch
 from torch import nn
 
+from anygoal.sources import source_path
+
 
 def driftworld_source_root() -> Path:
-    default = Path(__file__).resolve().parents[3] / "worldmodels" / "driftworld"
-    root = Path(os.environ.get("DRIFTWORLD_SOURCE_ROOT", default)).expanduser()
+    configured = os.environ.get("DRIFTWORLD_SOURCE_ROOT")
+    root = Path(configured).expanduser() if configured else source_path("driftworld")
     root = root.resolve() / "pusht_driftworld"
     if not (root / "drifting_denoiser_multi.py").is_file():
         raise FileNotFoundError(
-            "DriftWorld Push-T source was not found. Set DRIFTWORLD_SOURCE_ROOT "
-            f"to the vendored driftworld directory: {root.parent}"
+            "DriftWorld Push-T source was not found. Run "
+            f"`anygoal models install driftworld` or set DRIFTWORLD_SOURCE_ROOT: {root.parent}"
         )
     return root
 
 
 def robomimic_driftworld_source_root() -> Path:
-    default = Path(__file__).resolve().parents[3] / "worldmodels" / "driftworld"
-    root = Path(os.environ.get("DRIFTWORLD_SOURCE_ROOT", default)).expanduser()
+    configured = os.environ.get("DRIFTWORLD_SOURCE_ROOT")
+    root = Path(configured).expanduser() if configured else source_path("driftworld")
     root = root.resolve() / "robomimic_driftworld"
     if not (root / "drifting_denoiser_multi.py").is_file():
         raise FileNotFoundError(
-            "DriftWorld Robomimic source was not found. Set DRIFTWORLD_SOURCE_ROOT "
-            f"to the vendored driftworld directory: {root.parent}"
+            "DriftWorld Robomimic source was not found. Run "
+            f"`anygoal models install driftworld` or set DRIFTWORLD_SOURCE_ROOT: {root.parent}"
         )
     return root
 

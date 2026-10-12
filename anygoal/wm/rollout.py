@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -21,16 +20,8 @@ from anygoal.evaluation._rollout_adapters import (
     imagenet_preprocess,
 )
 from anygoal.paths import resolve_path
-
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-
-
-def _make_research_loaders_importable() -> None:
-    plan_directory = REPO_ROOT / "scripts" / "plan"
-    for source_directory in (REPO_ROOT, plan_directory):
-        if str(source_directory) not in sys.path:
-            sys.path.insert(0, str(source_directory))
+from anygoal.resources import resource_path
+from anygoal.sources import source_path
 
 
 def fit_processor(dataset, key: str) -> StandardScaler:
@@ -42,7 +33,11 @@ def fit_processor(dataset, key: str) -> StandardScaler:
 
 
 def load_planning_config(path: str | Path) -> DictConfig:
-    path = resolve_path(path)
+    path = Path(str(path)).expanduser()
+    if not path.is_absolute() and path.parts and path.parts[0] == "plan":
+        path = resource_path(*path.parts)
+    else:
+        path = resolve_path(path)
     if not path.is_file():
         raise FileNotFoundError(f"Planning config not found: {path}")
     return OmegaConf.load(path)
@@ -67,16 +62,15 @@ def build_adapter(
     run_directory_override: Path | None,
     history_length: int,
 ):
-    """Build the adapter used by ``scripts/eval/rollout.py``."""
-    _make_research_loaders_importable()
+    """Build an adapter for the installed rollout runner and public API."""
     action_processor = fit_processor(dataset, "action")
 
     if model_name == "lewm":
-        from planning import (
+        from anygoal.runners.plan.planning import (
             patch_loaded_model_compat,
             patch_transformers_vit_pickle_compat,
         )
-        from planning_lewm import load_lewm_cost_model
+        from anygoal.runners.plan.planning_lewm import load_lewm_cost_model
 
         cfg = load_planning_config(
             planning_config_override or model_cfg.planning_config
@@ -112,7 +106,7 @@ def build_adapter(
         )
 
     if model_name == "sensorimotor":
-        from planning_sensorimotor import load_model
+        from anygoal.runners.plan.planning_sensorimotor import load_model
 
         cfg = load_planning_config(
             planning_config_override or model_cfg.planning_config
@@ -123,9 +117,14 @@ def build_adapter(
             run_directory = resolve_path(model_cfg.run_directory)
         else:
             run_directory = resolve_path(Path(model_cfg.checkpoint).parent.parent)
-        source_root = resolve_path(
-            model_cfg.get("source_root", cfg.model.source_root)
+        configured_source = model_cfg.get("source_root", cfg.model.get("source_root"))
+        source_root = (
+            resolve_path(configured_source)
+            if configured_source
+            else source_path("sensorimotor") / "planning"
         )
+        if (source_root / "planning" / "jepa.py").is_file():
+            source_root = source_root / "planning"
         checkpoint = checkpoint_override or resolve_path(
             model_cfg.get("checkpoint", run_directory / "checkpoints" / "last.ckpt")
         )
@@ -153,11 +152,11 @@ def build_adapter(
         )
 
     if model_name == "prejepa":
-        from planning import (
+        from anygoal.runners.plan.planning import (
             patch_loaded_model_compat,
             patch_transformers_vit_pickle_compat,
         )
-        from planning_prejepa import load_prejepa_cost_model
+        from anygoal.runners.plan.planning_prejepa import load_prejepa_cost_model
 
         cfg = load_planning_config(
             planning_config_override or model_cfg.planning_config
@@ -198,7 +197,7 @@ def build_adapter(
         "action_duplicated_predictor",
         "toy_driftworld",
     }:
-        from planning_toy import load_predictor
+        from anygoal.runners.plan.planning_toy import load_predictor
 
         checkpoint = checkpoint_override or resolve_path(model_cfg.checkpoint)
         training_config = training_config_override or resolve_path(
@@ -241,7 +240,7 @@ def build_adapter(
         )
 
     if model_name == "driftworld":
-        from planning_driftworld import load_model
+        from anygoal.runners.plan.planning_driftworld import load_model
         from anygoal.wm.driftworld import DriftWorldActionProcessor
 
         cfg = load_planning_config(
@@ -271,7 +270,7 @@ def build_adapter(
         )
 
     if model_name == "irasim":
-        from planning_irasim import load_model
+        from anygoal.runners.plan.planning_irasim import load_model
         from anygoal.wm.irasim import IRASimActionProcessor
 
         cfg = load_planning_config(
@@ -280,6 +279,10 @@ def build_adapter(
         scheduler_override = os.environ.get("IRASIM_SCHEDULER_PATH")
         if scheduler_override:
             cfg.model.scheduler_path = scheduler_override
+        elif not Path(str(cfg.model.scheduler_path)).expanduser().is_dir():
+            cfg.model.scheduler_path = str(
+                source_path("irasim") / "pretrained_models" / "scheduler"
+            )
         checkpoint = checkpoint_override or resolve_path(model_cfg.checkpoint)
         cfg.model.checkpoint = str(checkpoint)
         if "vae_model_path" in model_cfg:

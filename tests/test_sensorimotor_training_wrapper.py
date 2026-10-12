@@ -1,4 +1,4 @@
-from scripts.train import train_sensorimotor
+from anygoal.runners.train import train_sensorimotor
 
 
 class FakeTrainer:

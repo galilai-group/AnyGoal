@@ -21,9 +21,8 @@ from omegaconf import OmegaConf
 from PIL import Image, ImageDraw
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path[:0] = [str(REPO_ROOT), str(REPO_ROOT / "scripts/eval")]
+sys.path.insert(0, str(REPO_ROOT))
 
-from eval import build_adapter, resolve_path  # noqa: E402
 from anygoal.evaluation.rollout import RolloutProtocol, _gather_batch  # noqa: E402
 from anygoal.evaluation._rollout_adapters import (  # noqa: E402
     DriftWorldRolloutAdapter,
@@ -34,6 +33,9 @@ from anygoal.evaluation._rollout_adapters import (  # noqa: E402
     standardize_action_blocks,
     standardize_tensor,
 )
+from anygoal.resources import resource_path  # noqa: E402
+from anygoal.sources import source_path  # noqa: E402
+from anygoal.wm.rollout import build_adapter, resolve_path  # noqa: E402
 
 ALIASES = {
     "toy-adaln": "adaln_predictor",
@@ -168,9 +170,11 @@ def main() -> None:
     )
     parser.add_argument("--device", default="cuda")
     args = parser.parse_args()
-    os.environ["LEWM_SOURCE_ROOT"] = str(REPO_ROOT / "worldmodels/lewm")
-    os.environ["IRASIM_SCHEDULER_PATH"] = str(REPO_ROOT / "worldmodels/IRASim/pretrained_models/scheduler")
-    cfg = OmegaConf.load(REPO_ROOT / "scripts/eval/config/rollout_eval.yaml")
+    os.environ["LEWM_SOURCE_ROOT"] = str(source_path("lewm"))
+    os.environ["IRASIM_SCHEDULER_PATH"] = str(
+        source_path("irasim") / "pretrained_models" / "scheduler"
+    )
+    cfg = OmegaConf.load(resource_path("eval", "rollout.yaml"))
     environment = ENVIRONMENT_ALIASES.get(args.environment, args.environment)
     model_name = ALIASES.get(args.model, args.model)
     dataset_cfg = cfg.datasets[environment]

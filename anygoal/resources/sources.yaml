@@ -1,0 +1,31 @@
+schema_version: 1
+
+sources:
+  driftworld:
+    aliases: [driftworldmodel]
+    repository: https://github.com/Susie-Lu/driftworld.git
+    revision: e24d385f738d0501a21156c5e62992e5e649e3e8
+    directory: driftworld
+    environment: DRIFTWORLD_SOURCE_ROOT
+    marker: pusht_driftworld/drifting_denoiser_multi.py
+  irasim:
+    aliases: []
+    repository: https://github.com/bytedance/IRASim.git
+    revision: c72b6dade6fcd65971e0aa8ab49ea39b15108c90
+    directory: IRASim
+    environment: IRASIM_SOURCE_ROOT
+    marker: models/irasim.py
+  lewm:
+    aliases: [le-wm]
+    repository: https://github.com/lucas-maes/le-wm.git
+    revision: 8edfeb336732b5f3ce7b8b210d0ba370a09e2cac
+    directory: lewm
+    environment: LEWM_SOURCE_ROOT
+    marker: jepa.py
+  sensorimotor:
+    aliases: [sensorimotor-wm, sensorimotor-world-model]
+    repository: https://github.com/petr-ivashkov/sensorimotor-world-model.git
+    revision: 9d22bcc15c6ad8af8cc93337a950df2b49a866b9
+    directory: sensorimotor-world-model
+    environment: SENSORIMOTOR_SOURCE_ROOT
+    marker: planning

@@ -222,7 +222,7 @@ def test_five_step_convenience_matches_default_short_horizon():
 def test_research_script_uses_the_shared_rollout_loader():
     from anygoal.paths import resolve_path
     from anygoal.wm.rollout import build_adapter
-    from scripts.eval import rollout as evaluation_script
+    from anygoal.runners import rollout as evaluation_script
 
     assert evaluation_script.build_adapter is build_adapter
     assert evaluation_script.resolve_path is resolve_path

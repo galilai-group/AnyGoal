@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import importlib.util
 import itertools
 import os
-import sys
 from pathlib import Path
 
 import h5py
@@ -13,7 +11,8 @@ import hdf5plugin
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+from anygoal.datasets import support_metrics
+
 FIELD_SLICES = {
     "arm": slice(0, 16),
     "hand": slice(29, 33),
@@ -23,12 +22,7 @@ FIELD_SLICES = {
 
 
 def _distribution_support_module():
-    path = REPO_ROOT / "scripts/analysis/distribution_support.py"
-    spec = importlib.util.spec_from_file_location("peg_distribution_support", path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+    return support_metrics
 
 
 def load_reference(path: Path, successful_only: bool = False):

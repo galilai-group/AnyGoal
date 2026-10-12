@@ -1,6 +1,4 @@
-"""Compatibility wrapper for ``anygoal train``."""
-
-from __future__ import annotations
+"""Compatibility entry point for ``anygoal train``."""
 
 import sys
 

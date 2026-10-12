@@ -1,0 +1,27 @@
+name: cube_essential
+dataset_name: cube_single_expert.h5
+cache_dir: null
+frameskip: 5
+state_dim: 9
+action_dim: 5
+state_normalization: minmax
+normalization_path: toy_predictors/statistics/cube_single_expert_9d_minmax.json
+extra_validation_sets: null
+keys_to_load:
+  - proprio_effector_pos
+  - proprio_effector_yaw
+  - proprio_gripper_opening
+  - proprio_gripper_contact
+  - privileged_block_0_pos
+  - action
+keys_to_cache:
+  - proprio_effector_pos
+  - proprio_effector_yaw
+  - proprio_gripper_opening
+  - proprio_gripper_contact
+  - privileged_block_0_pos
+  - action
+adapter:
+  _target_: anygoal.datasets.CubeTrueStateAdapter
+  include_joint_positions: false
+  include_gripper_contact: true

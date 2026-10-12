@@ -7,11 +7,12 @@ import importlib.util
 import sys
 from collections.abc import Sequence
 from functools import lru_cache
-from pathlib import Path
 
 import torch
 import torch.nn.functional as F
 from torch import nn
+
+from anygoal.sources import source_path
 
 from .common import prepare_planning_inputs, terminal_state_cost
 
@@ -19,9 +20,7 @@ from .common import prepare_planning_inputs, terminal_state_cost
 @lru_cache(maxsize=1)
 def _official_drift_loss_function():
     source = (
-        Path(__file__).resolve().parents[3]
-        / "worldmodels"
-        / "driftworld"
+        source_path("driftworld")
         / "pusht_driftworld"
         / "drifting"
         / "drift_loss_indep.py"

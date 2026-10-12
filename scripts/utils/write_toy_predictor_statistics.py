@@ -20,6 +20,7 @@ from anygoal.datasets import (  # noqa: E402
     adapted_minmax_statistics,
     adapted_zscore_statistics,
 )
+from anygoal.resources import resource_path  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -31,7 +32,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    config_directory = REPO_ROOT / "scripts/train/config/toy_predictors"
+    config_directory = resource_path("train", "toy_predictors")
     with initialize_config_dir(
         version_base=None,
         config_dir=str(config_directory),

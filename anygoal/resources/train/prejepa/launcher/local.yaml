@@ -1,0 +1,15 @@
+# @package _global_
+defaults:
+  - override /hydra/launcher: basic
+
+n_gpus: 1
+cpus_per_task: 8
+wandb:
+  enabled: false
+  config:
+    entity: stable-wm
+    project: stable-wm
+    name: ${output_model_name}
+    id: ${subdir}
+    resume: allow
+    log_model: false

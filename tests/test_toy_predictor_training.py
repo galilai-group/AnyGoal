@@ -14,7 +14,7 @@ STABLE_PRETRAINING_AVAILABLE = find_spec("stable_pretraining") is not None
 
 
 def _training_helpers():
-    from scripts.train.train_toy_predictor import (
+    from anygoal.runners.train.train_toy_predictor import (
         _indices_digest,
         _select_validation_fraction,
         _split_primary_dataset,
@@ -30,7 +30,7 @@ def _training_helpers():
 
 
 def _resume_helpers():
-    from scripts.train.train_toy_predictor import (
+    from anygoal.runners.train.train_toy_predictor import (
         _resolve_resume_checkpoint,
         _resolve_run_directory,
         _wandb_logger_config,

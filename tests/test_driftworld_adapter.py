@@ -11,7 +11,11 @@ import stable_worldmodel as swm
 import torch
 from torch import nn
 
-from scripts.train.train_driftworld import CheckpointingTorchProxy, TrainingTelemetry
+from anygoal.runners.train.train_driftworld import (
+    CheckpointingTorchProxy,
+    TrainingTelemetry,
+)
+from anygoal.resources import resource_path
 from anygoal.wm.driftworld import (
     DriftWorldActionProcessor,
     DriftWorldCubeHDF5Dataset,
@@ -334,10 +338,10 @@ def test_permanent_checkpoint_is_independent_and_never_overwritten(tmp_path):
 
 def test_cube_train_and_planning_configs_are_lewm_aligned():
     train_cfg = OmegaConf.load(
-        REPO_ROOT / "scripts" / "train" / "config" / "driftworld" / "cube_lewm.yaml"
+        resource_path("train", "driftworld", "cube_lewm.yaml")
     )
     planning_cfg = OmegaConf.load(
-        REPO_ROOT / "scripts" / "plan" / "config" / "driftworld" / "cube_lewm.yaml"
+        resource_path("plan", "driftworld", "cube_lewm.yaml")
     )
     assert train_cfg.model.source == planning_cfg.model.source == "robomimic"
     assert train_cfg.model.num_history_frames == planning_cfg.model.num_history_frames == 3
@@ -349,10 +353,10 @@ def test_cube_train_and_planning_configs_are_lewm_aligned():
 
 def test_tworoom_configs_reuse_pusht_model_and_are_lewm_aligned():
     train_cfg = OmegaConf.load(
-        REPO_ROOT / "scripts" / "train" / "config" / "driftworld" / "tworoom_lewm.yaml"
+        resource_path("train", "driftworld", "tworoom_lewm.yaml")
     )
     planning_cfg = OmegaConf.load(
-        REPO_ROOT / "scripts" / "plan" / "config" / "driftworld" / "tworoom_lewm.yaml"
+        resource_path("plan", "driftworld", "tworoom_lewm.yaml")
     )
     assert train_cfg.model.unet_name == planning_cfg.model.unet_name == "UNet_PushT"
     assert train_cfg.model.num_history_frames == 3
@@ -373,14 +377,7 @@ def test_tworoom_configs_reuse_pusht_model_and_are_lewm_aligned():
 def test_planning_configs_match_training_temporal_mode(
     task, mode, history, future, frameskip, planning_horizon
 ):
-    config_path = (
-            REPO_ROOT
-            / "scripts"
-            / "plan"
-            / "config"
-            / "driftworld"
-            / f"{task}_{mode}.yaml"
-    )
+    config_path = resource_path("plan", "driftworld", f"{task}_{mode}.yaml")
     cfg = OmegaConf.load(config_path)
     OmegaConf.resolve(cfg)
     assert cfg.model.action_mode == "relative"

@@ -1,0 +1,17 @@
+name: insert_peg_extra
+dataset_name: insert_peg_weak_expert_train.h5
+cache_dir: null
+frameskip: 5
+state_dim: 44
+action_dim: 5
+normalization_path: toy_predictors/statistics/insert_peg_weak_expert_train_44d.json
+extra_validation_sets: null
+keys_to_load:
+  - observation
+  - action
+keys_to_cache:
+  - observation
+  - action
+adapter:
+  _target_: anygoal.datasets.InsertPegStateAdapter
+  include_velocities: true

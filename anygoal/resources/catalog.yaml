@@ -134,9 +134,9 @@ models:
     capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: lewm
-    trainer: scripts/train/train_lewm.py
-    rollout_runner: scripts/eval/rollout.py
-    planner: scripts/plan/planning_lewm.py
+    trainer: anygoal.runners.train.train_lewm
+    rollout_runner: anygoal.runners.rollout
+    planner: anygoal.runners.plan.planning_lewm
     trainer_config_style: hydra
     training_profiles:
       pusht: null
@@ -151,15 +151,15 @@ models:
     capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: sensorimotor
-    trainer: scripts/train/train_sensorimotor.py
-    rollout_runner: scripts/eval/rollout.py
-    planner: scripts/plan/planning_sensorimotor.py
+    trainer: anygoal.runners.train.train_sensorimotor
+    rollout_runner: anygoal.runners.rollout
+    planner: anygoal.runners.plan.planning_sensorimotor
     trainer_config_style: hydra
     training_profiles:
-      pusht: scripts/train/config/sensorimotor/pusht.yaml
-      cube: scripts/train/config/sensorimotor/cube.yaml
-      tworoom: scripts/train/config/sensorimotor/tworoom.yaml
-      insertpeg: scripts/train/config/sensorimotor/insert_peg.yaml
+      pusht: train/sensorimotor/pusht.yaml
+      cube: train/sensorimotor/cube.yaml
+      tworoom: train/sensorimotor/tworoom.yaml
+      insertpeg: train/sensorimotor/insert_peg.yaml
     training_config_dir: sensorimotor
     planning_config_dir: sensorimotor
     planner_config_style: argparse
@@ -169,9 +169,9 @@ models:
     capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: prejepa
-    trainer: scripts/train/train_prejepa.py
-    rollout_runner: scripts/eval/rollout.py
-    planner: scripts/plan/planning_prejepa.py
+    trainer: anygoal.runners.train.train_prejepa
+    rollout_runner: anygoal.runners.rollout
+    planner: anygoal.runners.plan.planning_prejepa
     trainer_config_style: hydra
     training_profiles:
       pusht: null
@@ -186,17 +186,17 @@ models:
     capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: driftworld
-    trainer: scripts/train/train_driftworld.py
-    rollout_runner: scripts/eval/rollout.py
-    planner: scripts/plan/planning_driftworld.py
+    trainer: anygoal.runners.train.train_driftworld
+    rollout_runner: anygoal.runners.rollout
+    planner: anygoal.runners.plan.planning_driftworld
     training_config_dir: driftworld
     training_config_suffix: _lewm
     trainer_config_style: argparse
     training_profiles:
-      pusht: scripts/train/config/driftworld/pusht_lewm.yaml
-      cube: scripts/train/config/driftworld/cube_lewm.yaml
-      tworoom: scripts/train/config/driftworld/tworoom_lewm.yaml
-      insertpeg: scripts/train/config/driftworld/insert_peg_lewm.yaml
+      pusht: train/driftworld/pusht_lewm.yaml
+      cube: train/driftworld/cube_lewm.yaml
+      tworoom: train/driftworld/tworoom_lewm.yaml
+      insertpeg: train/driftworld/insert_peg_lewm.yaml
     planning_config_dir: driftworld
     planning_config_suffix: _lewm
     planner_config_style: argparse
@@ -206,16 +206,16 @@ models:
     capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: irasim
-    trainer: scripts/train/train_irasim.py
-    rollout_runner: scripts/eval/rollout.py
-    planner: scripts/plan/planning_irasim.py
+    trainer: anygoal.runners.train.train_irasim
+    rollout_runner: anygoal.runners.rollout
+    planner: anygoal.runners.plan.planning_irasim
     training_config_dir: irasim
     trainer_config_style: argparse
     training_profiles:
-      pusht: scripts/train/config/irasim/pusht.yaml
-      cube: scripts/train/config/irasim/cube.yaml
-      tworoom: scripts/train/config/irasim/tworoom.yaml
-      insertpeg: scripts/train/config/irasim/insert_peg.yaml
+      pusht: train/irasim/pusht.yaml
+      cube: train/irasim/cube.yaml
+      tworoom: train/irasim/tworoom.yaml
+      insertpeg: train/irasim/insert_peg.yaml
     planning_config_dir: irasim
     planner_config_style: argparse
     planner_seed_style: triple
@@ -224,15 +224,15 @@ models:
     capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: adaln_predictor
-    trainer: scripts/train/train_toy_predictor.py
-    rollout_runner: scripts/eval/rollout.py
-    planner: scripts/plan/planning_toy.py
+    trainer: anygoal.runners.train.train_toy_predictor
+    rollout_runner: anygoal.runners.rollout
+    planner: anygoal.runners.plan.planning_toy
     trainer_config_style: hydra
     training_profiles:
-      pusht: scripts/train/config/toy_predictors/train.yaml
-      cube: scripts/train/config/toy_predictors/train.yaml
-      tworoom: scripts/train/config/toy_predictors/train.yaml
-      insertpeg: scripts/train/config/toy_predictors/train.yaml
+      pusht: train/toy_predictors/train.yaml
+      cube: train/toy_predictors/train.yaml
+      tworoom: train/toy_predictors/train.yaml
+      insertpeg: train/toy_predictors/train.yaml
     planning_config_dir: toy_predictors
     planner_config_style: hydra
     planner_seed_style: override
@@ -242,15 +242,15 @@ models:
     capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: action_duplicated_predictor
-    trainer: scripts/train/train_toy_predictor.py
-    rollout_runner: scripts/eval/rollout.py
-    planner: scripts/plan/planning_toy.py
+    trainer: anygoal.runners.train.train_toy_predictor
+    rollout_runner: anygoal.runners.rollout
+    planner: anygoal.runners.plan.planning_toy
     trainer_config_style: hydra
     training_profiles:
-      pusht: scripts/train/config/toy_predictors/train.yaml
-      cube: scripts/train/config/toy_predictors/train.yaml
-      tworoom: scripts/train/config/toy_predictors/train.yaml
-      insertpeg: scripts/train/config/toy_predictors/train.yaml
+      pusht: train/toy_predictors/train.yaml
+      cube: train/toy_predictors/train.yaml
+      tworoom: train/toy_predictors/train.yaml
+      insertpeg: train/toy_predictors/train.yaml
     planning_config_dir: toy_predictors
     planner_config_style: hydra
     planner_seed_style: override
@@ -260,15 +260,15 @@ models:
     capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: toy_driftworld
-    trainer: scripts/train/train_toy_driftworld.py
-    rollout_runner: scripts/eval/rollout.py
-    planner: scripts/plan/planning_toy.py
+    trainer: anygoal.runners.train.train_toy_driftworld
+    rollout_runner: anygoal.runners.rollout
+    planner: anygoal.runners.plan.planning_toy
     trainer_config_style: hydra
     training_profiles:
-      pusht: scripts/train/config/toy_driftworld/train.yaml
-      cube: scripts/train/config/toy_driftworld/train.yaml
-      tworoom: scripts/train/config/toy_driftworld/train.yaml
-      insertpeg: scripts/train/config/toy_driftworld/train.yaml
+      pusht: train/toy_driftworld/train.yaml
+      cube: train/toy_driftworld/train.yaml
+      tworoom: train/toy_driftworld/train.yaml
+      insertpeg: train/toy_driftworld/train.yaml
     planning_config_dir: toy_predictors
     planner_config_style: hydra
     planner_seed_style: override

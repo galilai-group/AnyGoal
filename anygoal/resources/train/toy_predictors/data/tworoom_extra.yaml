@@ -1,0 +1,16 @@
+name: tworoom_extra
+dataset_name: tworoom.h5
+cache_dir: null
+frameskip: 5
+state_dim: 4
+action_dim: 2
+state_normalization: minmax
+fixed_state_minimum: 0.0
+fixed_state_maximum: 224.0
+normalization_path: toy_predictors/statistics/tworoom_extra_4d_minmax.json
+extra_validation_sets: null
+keys_to_load: [observation, action]
+keys_to_cache: [observation, action]
+adapter:
+  _target_: anygoal.datasets.TwoRoomTrueStateAdapter
+  include_doors: true

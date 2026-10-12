@@ -137,7 +137,7 @@ def test_rollout_dry_run_preserves_underlying_evaluator(capsys):
         == 0
     )
     output = capsys.readouterr().out
-    assert "scripts/eval/rollout.py" in output
+    assert "-m anygoal.runners.rollout" in output
     assert "--model driftworld" in output
     assert "--environment pusht" in output
 

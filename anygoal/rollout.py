@@ -22,12 +22,10 @@ from anygoal.planning import (
     _resolve_task,
 )
 from anygoal.registry import get_registry
+from anygoal.resources import resource_path
 
 
-DEFAULT_CONFIG = (
-    Path(__file__).resolve().parents[1]
-    / "scripts/eval/config/rollout_eval.yaml"
-)
+DEFAULT_CONFIG = resource_path("eval", "rollout.yaml")
 BASE_TASKS = {"pusht", "cube", "tworoom", "insertpeg"}
 
 

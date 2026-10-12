@@ -21,29 +21,27 @@ dependencies = [
 anygoal = "anygoal.cli:main"
 
 [project.optional-dependencies]
-env = [
-    "stable-worldmodel[env,format]>=0.1.1,<0.2.0",
-]
+data = []
 
-train = [
-    "stable-worldmodel[train,format]>=0.1.1,<0.2.0",
-    "accelerate>=1.15,<2",
-]
-
-paper = [
-    "stable-worldmodel[train,env,format]>=0.1.1,<0.2.0",
+eval = [
+    "diffusers>=0.39,<0.40",
+    "hydra-core>=1.3,<2",
+    "scikit-learn>=1.7,<2",
+    "stable-pretraining>=0.1.7,<0.2",
+    "timm>=1,<2",
     "transformers==5.15.1",
-    "pandas",
-    "matplotlib",
-    "seaborn",
-    "scikit-learn",
-    "wandb",
-    "jupyter",
 ]
 
-analysis = [
-    "imageio>=2.31",
-    "matplotlib",
+all = [
+    "stable-worldmodel[train,env,format]>=0.1.1,<0.2.0",
+    "accelerate>=1.15,<2",
+    "diffusers>=0.39,<0.40",
+    "hydra-core>=1.3,<2",
+    "scikit-learn>=1.7,<2",
+    "stable-pretraining>=0.1.7,<0.2",
+    "timm>=1,<2",
+    "transformers==5.15.1",
+    "wandb>=0.23,<0.24",
 ]
 
 dev = [

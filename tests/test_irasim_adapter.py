@@ -1,4 +1,3 @@
-from pathlib import Path
 from types import SimpleNamespace
 
 import gymnasium as gym
@@ -10,6 +9,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+from anygoal.resources import resource_path
 from anygoal.wm.irasim import (
     IRASimActionProcessor,
     IRASimHDF5Dataset,
@@ -18,10 +18,6 @@ from anygoal.wm.irasim import (
     adapt_irasim_action_frameskip,
     irasim_image_transform,
 )
-
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-
 
 def write_h5(path):
     length = 40
@@ -289,10 +285,10 @@ def test_policy_accumulates_frame_aligned_visual_and_action_context():
 
 def test_train_and_planning_configs_share_frameskip_and_upstream_defaults():
     train_cfg = OmegaConf.load(
-        REPO_ROOT / "scripts" / "train" / "config" / "irasim" / "pusht.yaml"
+        resource_path("train", "irasim", "pusht.yaml")
     )
     planning_cfg = OmegaConf.load(
-        REPO_ROOT / "scripts" / "plan" / "config" / "irasim" / "pusht.yaml"
+        resource_path("plan", "irasim", "pusht.yaml")
     )
     assert train_cfg.frameskip == planning_cfg.model.action_frameskip == 5
     assert planning_cfg.plan_config.action_block == 5
