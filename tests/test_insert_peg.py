@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from anygoal.envs.insert_peg import (
+from anygoal.envs.insert_peg.env import (
     InsertPegEnv,
     insert_peg_goal_errors,
     insert_peg_goal_reached,

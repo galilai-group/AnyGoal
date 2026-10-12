@@ -117,25 +117,25 @@ datasets:
     schema: stable-worldmodel-hdf5-v1
     source: external
   tworoom_route:
-    aliases: [tworoom-route, tworoom_triangle, tworoom_triangles, tworoom_route_test]
+    aliases: [tworoom-route, tworoom_route_test]
     family: tworoom
     filename: tworoom_route_test.h5
-    environment: anygoal/TwoRoom-Tri-v1
+    environment: anygoal/TwoRoom-Route-v1
     evaluation_id: tworoom_route
-    config_stem: tworoom_triangle
+    config_stem: tworoom_route
     schema: stable-worldmodel-hdf5-v1
     source: generated
-    collector: anygoal.collections.tworoom_triangle
+    collector: anygoal.collections.tworoom_route
     default_seed: 0
 
 models:
   lewm:
     aliases: []
-    capabilities: [train, predict, plan]
+    capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: lewm
     trainer: scripts/train/train_lewm.py
-    predictor: scripts/eval/eval.py
+    rollout_runner: scripts/eval/rollout.py
     planner: scripts/plan/planning_lewm.py
     trainer_config_style: hydra
     training_profiles:
@@ -148,11 +148,11 @@ models:
     planner_seed_style: override
   sensorimotor:
     aliases: [sensorimotor_wm]
-    capabilities: [train, predict, plan]
+    capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: sensorimotor
     trainer: scripts/train/train_sensorimotor.py
-    predictor: scripts/eval/eval.py
+    rollout_runner: scripts/eval/rollout.py
     planner: scripts/plan/planning_sensorimotor.py
     trainer_config_style: hydra
     training_profiles:
@@ -166,11 +166,11 @@ models:
     planner_seed_style: argparse
   prejepa:
     aliases: [dino-wm, dinowm]
-    capabilities: [train, predict, plan]
+    capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: prejepa
     trainer: scripts/train/train_prejepa.py
-    predictor: scripts/eval/eval.py
+    rollout_runner: scripts/eval/rollout.py
     planner: scripts/plan/planning_prejepa.py
     trainer_config_style: hydra
     training_profiles:
@@ -183,11 +183,11 @@ models:
     planner_seed_style: override
   driftworld:
     aliases: [driftworldmodel]
-    capabilities: [train, predict, plan]
+    capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: driftworld
     trainer: scripts/train/train_driftworld.py
-    predictor: scripts/eval/eval.py
+    rollout_runner: scripts/eval/rollout.py
     planner: scripts/plan/planning_driftworld.py
     training_config_dir: driftworld
     training_config_suffix: _lewm
@@ -203,11 +203,11 @@ models:
     planner_seed_style: triple
   irasim:
     aliases: []
-    capabilities: [train, predict, plan]
+    capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: irasim
     trainer: scripts/train/train_irasim.py
-    predictor: scripts/eval/eval.py
+    rollout_runner: scripts/eval/rollout.py
     planner: scripts/plan/planning_irasim.py
     training_config_dir: irasim
     trainer_config_style: argparse
@@ -221,11 +221,11 @@ models:
     planner_seed_style: triple
   toy-adaln:
     aliases: [adaln, adaln_predictor]
-    capabilities: [train, predict, plan]
+    capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: adaln_predictor
     trainer: scripts/train/train_toy_predictor.py
-    predictor: scripts/eval/eval.py
+    rollout_runner: scripts/eval/rollout.py
     planner: scripts/plan/planning_toy.py
     trainer_config_style: hydra
     training_profiles:
@@ -239,11 +239,11 @@ models:
     planning_checkpoint_key: model.checkpoint_path
   toy-action-duplicate:
     aliases: [action_duplicate, action_duplicated_predictor]
-    capabilities: [train, predict, plan]
+    capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: action_duplicated_predictor
     trainer: scripts/train/train_toy_predictor.py
-    predictor: scripts/eval/eval.py
+    rollout_runner: scripts/eval/rollout.py
     planner: scripts/plan/planning_toy.py
     trainer_config_style: hydra
     training_profiles:
@@ -257,11 +257,11 @@ models:
     planning_checkpoint_key: model.checkpoint_path
   toy-driftworld:
     aliases: [toy_driftworld]
-    capabilities: [train, predict, plan]
+    capabilities: [train, rollout, plan]
     families: [pusht, cube, tworoom, insert_peg]
     evaluation_id: toy_driftworld
     trainer: scripts/train/train_toy_driftworld.py
-    predictor: scripts/eval/eval.py
+    rollout_runner: scripts/eval/rollout.py
     planner: scripts/plan/planning_toy.py
     trainer_config_style: hydra
     training_profiles:
@@ -274,22 +274,4 @@ models:
     planner_seed_style: override
     planning_checkpoint_key: model.checkpoint_path
 
-visualizers:
-  dataset-gif:
-    description: Render frames from an HDF5 dataset as a GIF.
-    required_inputs: [dataset HDF5 containing pixels]
-    optional_inputs: [episode index, start frame, frame count, fps]
-    output: .gif
-  metrics-plot:
-    description: Plot scalar values from a prediction, planning, or analysis metrics JSON.
-    required_inputs: [metrics JSON containing numeric leaves]
-    optional_inputs: [title]
-    output: .png
-  counterfactual-grid:
-    description: Plot the registered counterfactual action and response grids.
-    required_inputs: [counterfactual result artifact]
-    optional_inputs: [model label, dataset label]
-    output: .png
-    runner: anygoal.evaluation.plot_counterfactual_grids
-    input_option: --input-root
-    output_option: --output-directory
+visualizers: {}

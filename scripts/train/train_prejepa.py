@@ -11,7 +11,6 @@ import types
 from pathlib import Path
 
 from hydra import compose, initialize_config_dir
-import lightning as pl
 import torch
 from lightning.pytorch.callbacks import Callback
 from omegaconf import OmegaConf

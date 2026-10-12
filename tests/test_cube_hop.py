@@ -4,14 +4,14 @@ import h5py
 import hdf5plugin  # noqa: F401
 import numpy as np
 
-from anygoal.datasets.cube_support import (
+from anygoal.datasets.cube.support import (
     CUBE_H5_COLUMNS,
     COLUMN_DTYPES,
     CubeActionSupport,
     CubeHDF5Writer,
     _balanced_batch_sides,
 )
-from anygoal.envs.cube_hop import (
+from anygoal.envs.cube_hop.env import (
     CUBE_HOP_SIDES,
     GRIPPER_TARGET_HIGH,
     GRIPPER_TARGET_LOW,
@@ -26,10 +26,10 @@ from anygoal.envs.cube_hop import (
     SIDE_SAMPLING_BOUNDS,
     WAYPOINT_HIGH,
     WAYPOINT_LOW,
-    CubeHopPolicy,
     cube_hop_success_criterion,
     wrapped_angle_error,
 )
+from anygoal.envs.cube_hop.policy import CubeHopPolicy
 
 
 class IdentitySupport:

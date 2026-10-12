@@ -50,24 +50,22 @@ by the entry point must have a globally unique `id` and the fields of
 ## Adding a model
 
 1. Add a catalog entry with a stable ID, aliases, evaluator ID, capabilities
-   (`train`, `predict`, `plan`), supported families, lazy trainer/evaluator
+   (`train`, `rollout`, `plan`), supported families, lazy trainer/evaluator
    module or script paths, config directories/styles, seed style, and
    checkpoint override key.
-2. Implement `ModelAdapter`, including `validate_dataset`. Prediction adapters
+2. Implement `ModelAdapter`, including `validate_dataset`. Rollout adapters
    implement `rollout_errors`; planning adapters implement candidate costs.
 3. State observation keys, action convention, history length, frame skip,
    preprocessing, normalization ownership, and output/error space.
-4. Write `artifact.json` beside checkpoints with model/dataset IDs, resolved
-   config, seed, source revision, entry file, normalization files, and SHA256.
-5. Add load round-trip, output-shape, seeded determinism, CPU/GPU smoke, and at
+4. Add load round-trip, output-shape, seeded determinism, CPU/GPU smoke, and at
    least one tiny end-to-end test. Existing checkpoint outputs must remain
    numerically unchanged.
 
 External models use the `anygoal.models` entry-point group. Optional dependency
 errors must name the install extra rather than failing during `import anygoal`.
-The trainer, predictor, and planner fields may name installed Python modules;
+The trainer, rollout runner, and planner fields may name installed Python modules;
 in-tree integrations may instead use repository-relative `.py` files. A
-predictor must accept `--model`, `--environment`, `--seed`, and optional
+rollout runner must accept `--model`, `--environment`, `--seed`, and optional
 `--checkpoint`. Planner config and seed arguments are generated from the
 catalog metadata, so adding an integration must not add a model-name branch to
 `anygoal.cli`.

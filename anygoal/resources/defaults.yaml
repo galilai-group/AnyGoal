@@ -12,39 +12,3 @@ wandb:
   dir: null
   tags: []
   resume: allow
-slurm:
-  partition: null
-  account: null
-  constraint: null
-  exclude: []
-  log_dir: log_slurm
-  python_env: null
-  max_array_parallel: 8
-  presets:
-    cpu-small:
-      cpus: 2
-      memory: 8G
-      time: "01:00:00"
-      gpus: 0
-      qos: null
-    gpu-smoke:
-      cpus: 4
-      memory: 32G
-      time: "04:00:00"
-      gpus: 1
-      gpu_type: h100
-      qos: null
-    gpu-train:
-      cpus: 8
-      memory: 64G
-      time: "2-00:00:00"
-      gpus: 1
-      gpu_type: h100
-      qos: null
-    gpu-eval:
-      cpus: 5
-      memory: 32G
-      time: "2-00:00:00"
-      gpus: 1
-      gpu_type: h100
-      qos: null

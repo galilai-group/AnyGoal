@@ -1,7 +1,7 @@
 import gymnasium as gym
 import numpy as np
 
-from anygoal.envs.push_t_antigoal import (
+from anygoal.envs.pusht_antigoal.env import (
     AGENT_POSITION_BOUNDS,
     ANTIGOAL_POSITION_ARRAY,
     ANTIGOAL_V3_POSITION_ARRAY,
@@ -12,10 +12,12 @@ from anygoal.envs.push_t_antigoal import (
     VISIBLE_GOAL_T_POSE,
     PushTAntigoal,
     PushTAntigoalEpisodeRandomizationWrapper,
+)
+from anygoal.envs.pusht_antigoal.policy import (
     PushTAntigoalPolicy,
     PushTAntigoalV3Policy,
 )
-from anygoal.envs.stack_t import (
+from anygoal.envs.stackt.env import (
     T_CENTER_OF_GRAVITY_LOCAL,
     V2_ANGLE_TOLERANCE,
 )

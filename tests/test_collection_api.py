@@ -1,26 +1,26 @@
-from argparse import Namespace
 from importlib import import_module
-from pathlib import Path
+from inspect import signature
 from types import SimpleNamespace
 
 import h5py
+import numpy as np
 import pytest
 
-import anygoal.collection as collection
-from anygoal.collections.cube_diagonal import parse_args as parse_cube_diagonal_args
+from anygoal import collection
+from anygoal.collections.cube_diagonal import collect_dataset as collect_cube_diagonal
+from anygoal.datasets.insert_peg.support import write_variant_dataset
+from anygoal.envs.insert_peg import env as insert_peg_env
+from anygoal.paths import data_root
 
 
 def test_python_collection_api_maps_common_episode_count(monkeypatch, tmp_path):
     captured = {}
 
-    def parse_args(arguments):
-        captured["arguments"] = arguments
-        return Namespace(output=tmp_path / "avoidt.h5")
+    def collect_dataset(**options):
+        captured["options"] = options
+        return options["output"]
 
-    module = SimpleNamespace(
-        parse_args=parse_args,
-        run=lambda args: args.output,
-    )
+    module = SimpleNamespace(collect_dataset=collect_dataset)
     monkeypatch.setattr(collection, "import_module", lambda _: module)
     monkeypatch.setattr(collection, "_stamp_dataset_id", lambda path, _: path)
     output = collection.collect(
@@ -30,16 +30,12 @@ def test_python_collection_api_maps_common_episode_count(monkeypatch, tmp_path):
         output=tmp_path / "avoidt.h5",
     )
     assert output == (tmp_path / "avoidt.h5").resolve()
-    assert captured["arguments"] == [
-        "--num-parallel",
-        "8",
-        "--output",
-        str(tmp_path / "avoidt.h5"),
-        "--seed",
-        "0",
-        "--episodes-per-goal",
-        "100",
-    ]
+    assert captured["options"] == {
+        "num_parallel": 8,
+        "output": tmp_path / "avoidt.h5",
+        "seed": 0,
+        "episodes_per_goal": 100,
+    }
 
 
 def test_python_collection_api_rejects_unbalanced_episode_count():
@@ -63,19 +59,17 @@ def test_generated_collectors_live_in_collection_package():
         if spec.source == "generated":
             assert spec.collector.startswith("anygoal.collections.")
             module = import_module(spec.collector)
-            assert callable(module.parse_args)
-            assert callable(module.run)
+            assert callable(module.collect_dataset)
 
 
 def test_cube_diagonal_defaults_collect_one_canonical_batch():
-    args = parse_cube_diagonal_args([])
-    assert args.episodes == 400
-    assert args.seed == 10065
-    assert args.num_parallel == 5
-    assert args.gif_episodes == 0
-    assert args.require_diagonal_lift is True
-    assert args.min_lifted_targets == 2
-    assert args.max_abs_block_quat_xy == 0.2
+    parameters = signature(collect_cube_diagonal).parameters
+    assert parameters["episodes"].default == 400
+    assert parameters["seed"].default == 10065
+    assert parameters["num_parallel"].default == 5
+    assert parameters["require_diagonal_lift"].default is True
+    assert parameters["min_lifted_targets"].default == 2
+    assert parameters["max_abs_block_quat_xy"].default == 0.2
 
 
 def test_python_collection_api_uses_catalog_seed_unless_overridden(
@@ -83,34 +77,60 @@ def test_python_collection_api_uses_catalog_seed_unless_overridden(
 ):
     captured = []
 
-    def parse_args(arguments):
-        captured.append(arguments)
-        return Namespace(output=tmp_path / "cube-diagonal.h5")
+    def collect_dataset(**options):
+        captured.append(options)
+        return tmp_path / "cube-diagonal.h5"
 
-    module = SimpleNamespace(parse_args=parse_args, run=lambda args: args.output)
+    module = SimpleNamespace(collect_dataset=collect_dataset)
     monkeypatch.setattr(collection, "import_module", lambda _: module)
     monkeypatch.setattr(collection, "_stamp_dataset_id", lambda path, _: path)
 
     collection.collect("cubediagonal")
     collection.collect("cubediagonal", seed=7)
 
-    assert captured == [["--seed", "10065"], ["--seed", "7"]]
+    assert captured == [{"seed": 10065}, {"seed": 7}]
 
 
 def test_cli_collection_uses_catalog_seed(monkeypatch, tmp_path):
     captured = {}
 
-    def parse_args(arguments):
-        captured["arguments"] = arguments
-        return Namespace(output=tmp_path / "cube-diagonal.h5")
+    def collect_dataset(*, seed=10065):
+        captured["seed"] = seed
+        return tmp_path / "cube-diagonal.h5"
 
-    module = SimpleNamespace(parse_args=parse_args, run=lambda args: args.output)
+    module = SimpleNamespace(collect_dataset=collect_dataset)
     monkeypatch.setattr(collection, "import_module", lambda _: module)
     monkeypatch.setattr(collection, "_stamp_dataset_id", lambda path, _: path)
 
     collection.collect_from_cli("cubediagonal", [])
 
-    assert captured["arguments"] == ["--seed", "10065"]
+    assert captured["seed"] == 10065
+
+
+def test_collection_cli_parses_typed_collector_options(tmp_path):
+    module = import_module("anygoal.collections.cube_diagonal")
+    options = collection._parse_cli_options(
+        "cubediagonal",
+        module,
+        [
+            "--episodes",
+            "10",
+            "--output",
+            str(tmp_path / "cube.h5"),
+            "--no-require-diagonal-lift",
+        ],
+    )
+    assert options == {
+        "episodes": 10,
+        "output": tmp_path / "cube.h5",
+        "require_diagonal_lift": False,
+    }
+
+
+def test_collection_cli_rejects_unknown_collector_option():
+    module = import_module("anygoal.collections.avoidt")
+    with pytest.raises(SystemExit):
+        collection._parse_cli_options("avoidt", module, ["--not-an-option", "1"])
 
 
 def test_collection_result_records_dataset_identity(tmp_path):
@@ -120,3 +140,42 @@ def test_collection_result_records_dataset_identity(tmp_path):
     assert collection._stamp_dataset_id(path, "avoidt") == path
     with h5py.File(path, "r") as handle:
         assert handle.attrs["anygoal_dataset_id"] == "avoidt"
+
+
+def test_data_root_uses_stablewm_home(monkeypatch, tmp_path):
+    monkeypatch.delenv("ANYGOAL_DATA_ROOT", raising=False)
+    monkeypatch.setenv("STABLEWM_HOME", str(tmp_path))
+    assert data_root() == tmp_path / "datasets"
+
+
+def test_insert_peg_variant_writer_preserves_canonical_schema(tmp_path):
+    output = tmp_path / "variant.h5"
+    first_states = np.arange(3 * 44, dtype=np.float64).reshape(3, 44)
+    second_states = np.arange(2 * 44, dtype=np.float64).reshape(2, 44) + 1000
+    episodes = [
+        {"states": first_states, "actions": np.ones((2, 5))},
+        {"states": second_states, "actions": np.full((1, 5), 2.0)},
+    ]
+    write_variant_dataset(
+        output,
+        episodes,
+        {"task": "test", "seed": 7},
+        include_pixels=False,
+        env=None,
+    )
+
+    expected_observation = np.concatenate(
+        (first_states[:-1], second_states[:-1])
+    ).astype(np.float32)
+    with h5py.File(output, "r") as dataset:
+        np.testing.assert_array_equal(dataset["ep_len"][:], [2, 1])
+        np.testing.assert_array_equal(dataset["ep_offset"][:], [0, 2])
+        np.testing.assert_array_equal(dataset["ep_idx"][:], [0, 0, 1])
+        np.testing.assert_array_equal(dataset["fragment_start"][:], [True, False, True])
+        np.testing.assert_array_equal(dataset["fragment_end"][:], [False, True, True])
+        np.testing.assert_array_equal(dataset["observation"][:], expected_observation)
+        assert dataset["privilege"].id == dataset["observation"].id
+        for name, columns in insert_peg_env.STATE_FIELDS.items():
+            np.testing.assert_array_equal(
+                dataset[name][:], expected_observation[:, columns]
+            )

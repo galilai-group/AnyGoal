@@ -1,19 +1,18 @@
 import gymnasium as gym
 import numpy as np
 
-from anygoal.envs.stack_t import (
+from anygoal.envs.stackt.env import (
     GOAL_T_POSE,
     T_HEAD_CENTER_LOCAL,
     StackT,
     StackTEpisodeRandomizationWrapper,
-    StackTPolicy,
     StackTV2EpisodeRandomizationWrapper,
-    StackTV2Policy,
     V2_ANGLE_TOLERANCE,
     V2_INITIAL_BLOCK_ANGLE_BOUNDS,
     rotate,
     stacked_block_pose,
 )
+from anygoal.envs.stackt.policy import StackTPolicy, StackTV2Policy
 
 
 class ResetRecorder(gym.Env):

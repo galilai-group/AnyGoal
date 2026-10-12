@@ -33,7 +33,7 @@ class ModelSpec:
     families: frozenset[str]
     evaluation_id: str
     trainer: str
-    predictor: str
+    rollout_runner: str
     planner: str
     training_config_dir: str | None
     training_config_suffix: str
@@ -106,7 +106,7 @@ class Registry:
                 families=frozenset(item["families"]),
                 evaluation_id=item.get("evaluation_id", item_id),
                 trainer=item["trainer"],
-                predictor=item["predictor"],
+                rollout_runner=item["rollout_runner"],
                 planner=item["planner"],
                 training_config_dir=item.get("training_config_dir"),
                 training_config_suffix=item.get("training_config_suffix", ""),
@@ -161,7 +161,7 @@ class Registry:
                     seen.add(alias)
 
     def _validate_specs(self) -> None:
-        valid_capabilities = {"train", "predict", "plan"}
+        valid_capabilities = {"train", "rollout", "plan"}
         for model in self.models.values():
             unknown = model.capabilities - valid_capabilities
             if unknown:

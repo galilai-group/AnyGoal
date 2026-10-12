@@ -1,0 +1,21 @@
+kind,canonical_id,accepted_aliases,canonical_hdf5_filename,valid_task_for_anygoal_train,supported_training_tasks,notes
+task_data,pusht,push_t,pusht_expert_train.h5,yes,pusht|cube|tworoom|insert_peg,Use task="pusht"; data is the PushT HDF5 path.
+task_data,cube,cube_single,cube_single_expert.h5,yes,pusht|cube|tworoom|insert_peg,Use task="cube"; data is the Cube HDF5 path.
+task_data,tworoom,two_room,tworoom.h5,yes,pusht|cube|tworoom|insert_peg,Use task="tworoom"; data is the TwoRoom HDF5 path.
+task_data,insertpeg,insert_peg,insert_peg_weak_expert_train.h5,yes,pusht|cube|tworoom|insert_peg,Use task="insert_peg" or canonical task="insertpeg".
+dataset_only,avoidt,avoid_t,avoidt_test.h5,no,,Evaluation/collection dataset; not a training task profile.
+dataset_only,stackt,stack_t,stackt_test.h5,no,,Evaluation/collection dataset; not a training task profile.
+dataset_only,pusht-antigoal,pusht_antigoal|push_t_antigoal,pusht_antigoal_test.h5,no,,Evaluation/collection dataset; not a training task profile.
+dataset_only,cubehop,cube_hop,cube_hop_test.h5,no,,Evaluation/collection dataset; not a training task profile.
+dataset_only,cubediagonal,cube_diagonal,cube_diagonal_test.h5,no,,Evaluation/collection dataset; not a training task profile.
+dataset_only,avoid_peg,avoid-peg,avoid_peg_test.h5,no,,Evaluation/collection dataset; not a training task profile.
+dataset_only,extractpeg,extract-peg|extract_peg,extract_peg_test.h5,no,,Evaluation/collection dataset; not a training task profile.
+dataset_only,tworoom_route,tworoom-route|tworoom_route_test,tworoom_route_test.h5,no,,Evaluation/collection dataset; not a training task profile.
+model,lewm,,,,pusht|cube|tworoom|insertpeg,No model alias.
+model,sensorimotor,sensorimotor_wm,,,pusht|cube|tworoom|insertpeg,
+model,prejepa,dino-wm|dinowm,,,pusht|cube|tworoom|insertpeg,
+model,driftworld,driftworldmodel,,,pusht|cube|tworoom|insertpeg,
+model,irasim,,,,pusht|cube|tworoom|insertpeg,No model alias.
+model,toy-adaln,adaln|adaln_predictor,,,pusht|cube|tworoom|insertpeg,
+model,toy-action-duplicate,action_duplicate|action_duplicated_predictor,,,pusht|cube|tworoom|insertpeg,
+model,toy-driftworld,toy_driftworld,,,pusht|cube|tworoom|insertpeg,

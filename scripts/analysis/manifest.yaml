@@ -4,9 +4,8 @@ schema_version: 1
 # changing solver, seed, checkpoint, or temporal defaults. Checkpoint URLs and
 # checksums must be added before the public release.
 matrices:
-  - id: prediction-public-matrix
-    evaluation: prediction
-    resource_preset: gpu-eval
+  - id: rollout-public-matrix
+    evaluation: rollout
     models:
       - lewm
       - sensorimotor
@@ -33,7 +32,6 @@ matrices:
 
   - id: planning-public-matrix
     evaluation: planning
-    resource_preset: gpu-eval
     models:
       - lewm
       - sensorimotor

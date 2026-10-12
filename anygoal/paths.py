@@ -5,11 +5,23 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from stable_worldmodel.data.utils import get_cache_dir
+
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+
+
+def resolve_path(value: str | Path, *, base: str | Path = REPOSITORY_ROOT) -> Path:
+    """Expand a path, resolving relative values against a caller-selected base."""
+    path = Path(str(value)).expanduser()
+    return path if path.is_absolute() else Path(base).expanduser() / path
+
 
 def data_root() -> Path:
-    return Path(
-        os.environ.get("ANYGOAL_DATA_ROOT", "~/.stable_worldmodel/datasets")
-    ).expanduser()
+    override = os.environ.get("ANYGOAL_DATA_ROOT")
+    if override:
+        return Path(override).expanduser()
+    return get_cache_dir(sub_folder="datasets")
 
 
 def checkpoint_root() -> Path:

@@ -139,9 +139,9 @@ def _run_eval(args: argparse.Namespace) -> int:
         raise ValueError(f"{model.id} does not declare support for {dataset.family} datasets.")
     root = _repository_root()
     extra = _clean_remainder(args.arguments)
-    if args.eval_kind == "prediction":
+    if args.eval_kind == "rollout":
         command = [
-            *_python_command(root, model.predictor),
+            *_python_command(root, model.rollout_runner),
             "--model",
             model.evaluation_id,
             "--environment",
@@ -151,7 +151,7 @@ def _run_eval(args: argparse.Namespace) -> int:
         ]
         if args.checkpoint:
             command.extend(["--checkpoint", str(args.checkpoint.expanduser().resolve())])
-    elif args.eval_kind == "planning":
+    else:
         config = args.model_config or _planning_config(root, model, dataset)
         if not config.is_file():
             raise FileNotFoundError(
@@ -185,72 +185,15 @@ def _run_eval(args: argparse.Namespace) -> int:
                 f"{model.planning_checkpoint_key}="
                 f"{args.checkpoint.expanduser().resolve()}"
             )
-    else:
-        if model.id not in {"lewm", "sensorimotor", "toy-adaln"}:
-            raise ValueError(
-                "The preserved counterfactual protocol currently supports lewm, "
-                "sensorimotor, and toy-adaln."
-            )
-        if dataset.id not in {"pusht", "cube", "tworoom", "insertpeg"}:
-            raise ValueError("Counterfactual evaluation is defined only for base datasets.")
-        counterfactual_model = {
-            "lewm": "lewm",
-            "sensorimotor": "sensorimotor",
-            "toy-adaln": "adaln_predictor",
-        }[model.id]
-        command = [
-            sys.executable,
-            "-m",
-            "anygoal.evaluation.counterfactual_runner",
-            "--model",
-            counterfactual_model,
-            "--environment",
-            dataset.evaluation_id,
-            "--seed",
-            str(args.seed),
-        ]
     command.extend(extra)
     return _execute(command, dry_run=args.dry_run, cwd=root)
 
 
 def _run_visualize(args: argparse.Namespace) -> int:
     spec = get_registry().visualizer(args.visualizer_id)
-    if args.visualizer_id in {"dataset-gif", "metrics-plot"} or spec.runner:
+    if spec.runner:
         if args.input is None or args.output is None:
             raise ValueError(f"{args.visualizer_id} requires --input and --output.")
-        if args.dry_run and not spec.runner:
-            print(
-                shlex.join(
-                    [
-                        "anygoal",
-                        "visualize",
-                        args.visualizer_id,
-                        "--input",
-                        str(args.input),
-                        "--output",
-                        str(args.output),
-                    ]
-                )
-            )
-            return 0
-    if args.visualizer_id == "dataset-gif":
-        from anygoal.visualization import render_dataset_gif
-
-        output = render_dataset_gif(
-            args.input,
-            args.output,
-            start=args.start,
-            frames=args.frames,
-            fps=args.fps,
-            overwrite=args.overwrite,
-        )
-    elif args.visualizer_id == "metrics-plot":
-        from anygoal.visualization import plot_metrics
-
-        output = plot_metrics(
-            args.input, args.output, title=args.title, overwrite=args.overwrite
-        )
-    elif spec.runner:
         command = [
             *_python_command(_repository_root(), spec.runner),
             spec.input_option,
@@ -260,73 +203,7 @@ def _run_visualize(args: argparse.Namespace) -> int:
             *_clean_remainder(args.arguments),
         ]
         return _execute(command, dry_run=args.dry_run, cwd=_repository_root())
-    else:
-        raise ValueError(f"{spec.id} does not declare an executable runner.")
-    print(output)
-    return 0
-
-
-def _sbatch_command(args: argparse.Namespace) -> tuple[list[str], Path]:
-    config = load_config(site=args.site, experiment=args.config)
-    slurm = config["slurm"]
-    try:
-        preset = slurm["presets"][args.preset]
-    except KeyError as error:
-        choices = ", ".join(sorted(slurm["presets"]))
-        raise ValueError(f"Unknown resource preset {args.preset!r}; choose {choices}.") from error
-    root = _repository_root()
-    log_dir = Path(slurm["log_dir"])
-    if not log_dir.is_absolute():
-        log_dir = root / log_dir
-    command = ["sbatch", f"--job-name={args.job_name}"]
-    options = {
-        "partition": slurm.get("partition"),
-        "account": slurm.get("account"),
-        "constraint": slurm.get("constraint"),
-        "qos": preset.get("qos"),
-        "cpus-per-task": preset.get("cpus"),
-        "mem": preset.get("memory"),
-        "time": preset.get("time"),
-    }
-    for key, value in options.items():
-        if value is not None:
-            command.append(f"--{key}={value}")
-    if preset.get("gpus"):
-        gpu_type = preset.get("gpu_type")
-        gres = f"gpu:{gpu_type}:{preset['gpus']}" if gpu_type else f"gpu:{preset['gpus']}"
-        command.append(f"--gres={gres}")
-    if slurm.get("exclude"):
-        command.append("--exclude=" + ",".join(slurm["exclude"]))
-    if args.array:
-        command.append(f"--array={args.array}")
-    exported = ["ALL", f"ANYGOAL_PYTHON_ENV={slurm.get('python_env') or ''}"]
-    wandb = config.get("wandb", {})
-    if wandb.get("entity"):
-        exported.append(f"WANDB_ENTITY={wandb['entity']}")
-    if wandb.get("project"):
-        exported.append(f"WANDB_PROJECT={wandb['project']}")
-    if wandb.get("mode"):
-        exported.append(f"WANDB_MODE={wandb['mode']}")
-    command.extend(
-        [
-            f"--output={log_dir}/%x-%A_%a.out",
-            f"--error={log_dir}/%x-%A_%a.err",
-            "--export=" + ",".join(exported),
-            str(root / "slurm/run.sh"),
-        ]
-    )
-    payload = _clean_remainder(args.command)
-    if not payload:
-        raise ValueError("Pass the command after `--`, for example `-- anygoal list models`.")
-    command.extend(payload)
-    return command, log_dir
-
-
-def _run_submit(args: argparse.Namespace) -> int:
-    command, log_dir = _sbatch_command(args)
-    if not args.dry_run:
-        log_dir.mkdir(parents=True, exist_ok=True)
-    return _execute(command, dry_run=args.dry_run, cwd=_repository_root())
+    raise ValueError(f"{spec.id} does not declare an executable runner.")
 
 
 def _run_list(args: argparse.Namespace) -> int:
@@ -351,7 +228,6 @@ def _run_reproduce(args: argparse.Namespace) -> int:
         raise ValueError("Unsupported reproduction manifest schema version.")
     for matrix in manifest.get("matrices", ()):
         evaluation = matrix["evaluation"]
-        preset = matrix.get("resource_preset", "gpu-eval")
         for model_id, dataset_id, seed in product(
             matrix["models"], matrix["datasets"], matrix.get("seeds", [0])
         ):
@@ -366,19 +242,7 @@ def _run_reproduce(args: argparse.Namespace) -> int:
                 "--seed",
                 str(seed),
             ]
-            if args.submit:
-                submit_args = argparse.Namespace(
-                    preset=preset,
-                    job_name=f"{evaluation}-{model_id}-{dataset_id}-s{seed}",
-                    array=None,
-                    site=args.site,
-                    config=None,
-                    dry_run=args.dry_run,
-                    command=payload,
-                )
-                return_code = _run_submit(submit_args)
-            else:
-                return_code = _execute(payload, dry_run=True)
+            return_code = _execute(payload, dry_run=True)
             if return_code:
                 return return_code
     return 0
@@ -435,7 +299,7 @@ def _parser() -> argparse.ArgumentParser:
 
     evaluation = subparsers.add_parser("eval", help="Run a common evaluation protocol.")
     evaluation_subparsers = evaluation.add_subparsers(dest="eval_kind", required=True)
-    for kind in ("prediction", "planning", "counterfactual"):
+    for kind in ("rollout", "planning"):
         child = evaluation_subparsers.add_parser(kind)
         child.add_argument("--model", dest="model_id", required=True)
         child.add_argument("--dataset", dest="dataset_id", required=True)
@@ -464,37 +328,14 @@ def _parser() -> argparse.ArgumentParser:
     visualize.add_argument("visualizer_id", choices=tuple(get_registry().visualizers))
     visualize.add_argument("--input", type=Path)
     visualize.add_argument("--output", type=Path)
-    visualize.add_argument("--start", type=int, default=0)
-    visualize.add_argument("--frames", type=int, default=100)
-    visualize.add_argument("--fps", type=float, default=10.0)
-    visualize.add_argument("--title")
-    visualize.add_argument("--overwrite", action="store_true")
     visualize.add_argument("--dry-run", action="store_true")
     visualize.add_argument("arguments", nargs="*")
     visualize.set_defaults(handler=_run_visualize)
-
-    submit = subparsers.add_parser("submit", help="Submit any AnyGoal command with a site profile.")
-    submit.add_argument("--preset", default="gpu-train")
-    submit.add_argument("--job-name", default="anygoal")
-    submit.add_argument("--array")
-    submit.add_argument("--site", type=Path)
-    submit.add_argument("--config", type=Path, help="Experiment config.")
-    submit.add_argument("--dry-run", action="store_true")
-    submit.add_argument("command", nargs=argparse.REMAINDER)
-    submit.set_defaults(handler=_run_submit)
 
     reproduce = subparsers.add_parser(
         "reproduce", help="Expand a versioned experiment manifest."
     )
     reproduce.add_argument("manifest", type=Path)
-    reproduce.add_argument("--submit", action="store_true")
-    reproduce.add_argument("--site", type=Path)
-    reproduce.add_argument(
-        "--dry-run",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Print sbatch commands without submission (default: true).",
-    )
     reproduce.set_defaults(handler=_run_reproduce)
     return parser
 

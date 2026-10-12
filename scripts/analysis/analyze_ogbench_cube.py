@@ -6,7 +6,8 @@ import json
 from pathlib import Path
 
 import h5py
-import hdf5plugin  # Registers the Blosc filter used by the pixel dataset.
+# Registers the Blosc filter used by the pixel dataset.
+import hdf5plugin  # noqa: F401
 import imageio.v2 as imageio
 import matplotlib
 import numpy as np

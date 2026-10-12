@@ -1,4 +1,4 @@
-"""World-model implementations maintained by anygoal."""
+"""AnyGoal-owned world models and integrations with upstream world models."""
 
 __all__ = [
     "DriftWorldWorldModel",

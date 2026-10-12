@@ -16,7 +16,7 @@ from anygoal.datasets import (
     ZScoreTransform,
     adapted_zscore_statistics,
 )
-from anygoal.evaluation.prediction_models import standardize_tensor
+from anygoal.evaluation._rollout_adapters import standardize_tensor
 from anygoal.wm.toy_predictors import (
     ActionDuplicateCausalPredictor,
     AdaLNActionPredictor,

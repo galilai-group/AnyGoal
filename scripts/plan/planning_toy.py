@@ -35,11 +35,11 @@ sys.modules.setdefault("unstable_worldmodel", anygoal)
 sys.modules.setdefault("unstable_worldmodel.datasets", anygoal_datasets)
 sys.modules.setdefault("unstable_worldmodel.wm", anygoal_wm)
 sys.modules.setdefault("unstable_worldmodel.wm.toy_predictors", anygoal_toy_predictors)
-from anygoal.envs.cube_hop import (  # noqa: E402
+from anygoal.envs.cube_hop.env import (  # noqa: E402
     add_cube_evaluation_metrics,
     prepare_cube_evaluation,
 )
-from anygoal.envs.insert_peg import (  # noqa: E402
+from anygoal.envs.insert_peg.env import (  # noqa: E402
     add_insert_peg_evaluation_metrics,
 )
 from anygoal.wm.toy_predictors import (  # noqa: E402
@@ -47,7 +47,7 @@ from anygoal.wm.toy_predictors import (  # noqa: E402
     FixedStandardScaler,
     ToyWorldModelPolicy,
 )
-from anygoal.evaluation.planning_artifacts import PlanningArtifactRecorder  # noqa: E402
+from anygoal._planning_artifacts import PlanningArtifactRecorder  # noqa: E402
 
 
 def get_episodes_length(dataset, episodes) -> np.ndarray:

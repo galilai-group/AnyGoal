@@ -17,14 +17,14 @@ from sklearn import preprocessing
 from torchvision.transforms import v2 as transforms
 import stable_worldmodel as swm
 import anygoal  # noqa: F401
-from anygoal.envs.cube_hop import (
+from anygoal.envs.cube_hop.env import (
     add_cube_evaluation_metrics,
     prepare_cube_evaluation,
 )
-from anygoal.envs.insert_peg import (
+from anygoal.envs.insert_peg.env import (
     add_insert_peg_evaluation_metrics,
 )
-from anygoal.evaluation.planning_artifacts import PlanningArtifactRecorder
+from anygoal._planning_artifacts import PlanningArtifactRecorder
 
 
 def patch_transformers_vit_pickle_compat() -> None:

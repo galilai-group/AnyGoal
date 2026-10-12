@@ -61,13 +61,12 @@ def test_catalog_matches_public_support_sets():
     } == {"pusht", "cube", "insertpeg", "tworoom"}
 
 
-def test_default_config_has_no_personal_cluster_policy(tmp_path, monkeypatch):
+def test_default_config_has_no_personal_service_policy(tmp_path, monkeypatch):
     monkeypatch.setenv("ANYGOAL_SITE_CONFIG", str(tmp_path / "missing.yaml"))
     config = load_config()
     assert config["wandb"]["enabled"] is False
     assert config["wandb"]["entity"] is None
-    assert config["slurm"]["partition"] is None
-    assert config["slurm"]["exclude"] == []
+    assert "slurm" not in config
 
 
 def test_hdf5_validation_reports_shape_and_episode_errors(tmp_path):
@@ -89,23 +88,43 @@ def test_cli_lists_registry(capsys):
     assert "toy-action-duplicate" in output
 
 
-def test_visualize_help_describes_required_inputs(capsys):
+def test_counterfactual_analysis_is_not_in_public_cli(capsys):
     try:
-        main(["visualize", "--help"])
+        main(["eval", "--help"])
     except SystemExit as error:
         assert error.code == 0
     output = capsys.readouterr().out
-    assert "Required inputs:" in output
-    assert "dataset HDF5 containing pixels" in output
-    assert "metrics JSON containing numeric leaves" in output
+    assert "counterfactual" not in output
+    assert "prediction" not in output
+    assert "rollout" in output
 
 
-def test_prediction_dry_run_preserves_underlying_evaluator(capsys):
+def test_reproduce_prints_commands_without_scheduler(capsys, tmp_path):
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """schema_version: 1
+matrices:
+  - evaluation: rollout
+    models: [driftworld]
+    datasets: [pusht]
+    seeds: [2]
+"""
+    )
+
+    assert main(["reproduce", str(manifest)]) == 0
+    output = capsys.readouterr().out
+    assert output.strip() == (
+        "anygoal eval rollout --model driftworld --dataset pusht --seed 2"
+    )
+    assert "sbatch" not in output
+
+
+def test_rollout_dry_run_preserves_underlying_evaluator(capsys):
     assert (
         main(
             [
                 "eval",
-                "prediction",
+                "rollout",
                 "--model",
                 "driftworld",
                 "--dataset",
@@ -118,7 +137,7 @@ def test_prediction_dry_run_preserves_underlying_evaluator(capsys):
         == 0
     )
     output = capsys.readouterr().out
-    assert "scripts/eval/eval.py" in output
+    assert "scripts/eval/rollout.py" in output
     assert "--model driftworld" in output
     assert "--environment pusht" in output
 
@@ -206,28 +225,6 @@ def test_public_planning_matrix_has_a_dispatch_path(capsys):
                 == 0
             )
     capsys.readouterr()
-
-
-def test_counterfactual_visualizer_forwards_declared_io(capsys, tmp_path):
-    input_root = tmp_path / "results"
-    output_directory = tmp_path / "figures"
-    assert (
-        main(
-            [
-                "visualize",
-                "counterfactual-grid",
-                "--input",
-                str(input_root),
-                "--output",
-                str(output_directory),
-                "--dry-run",
-            ]
-        )
-        == 0
-    )
-    output = capsys.readouterr().out
-    assert "--input-root" in output and str(input_root) in output
-    assert "--output-directory" in output and str(output_directory) in output
 
 
 def test_catalog_resource_is_serializable():

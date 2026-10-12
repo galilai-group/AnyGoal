@@ -805,7 +805,6 @@ def create_output_h5(
                 source_episode_id = int(source_episode_id)
                 source_start = int(offsets[source_episode_id])
                 episode_length = int(lengths[source_episode_id])
-                source_end = source_start + episode_length
                 output_end = output_cursor + episode_length
                 for name, source_dataset in source.items():
                     if not isinstance(source_dataset, h5py.Dataset):

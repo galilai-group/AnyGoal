@@ -1,0 +1,43 @@
+"""Action normalization for the IRASim integration."""
+
+from __future__ import annotations
+
+import numpy as np
+import torch
+
+
+class IRASimActionProcessor:
+    """Z-score CEM actions while IRASim receives its original scaled units."""
+
+    def __init__(self, mean=None, scale=None) -> None:
+        mean = np.zeros(2, dtype=np.float32) if mean is None else mean
+        scale = np.ones(2, dtype=np.float32) if scale is None else scale
+        self.mean = np.asarray(mean, dtype=np.float32)
+        self.scale = np.asarray(scale, dtype=np.float32)
+        if self.mean.ndim != 1 or self.mean.shape != self.scale.shape:
+            raise ValueError("Action mean and scale must be same-sized 1-D arrays.")
+        if not np.isfinite(self.mean).all() or not np.isfinite(self.scale).all():
+            raise ValueError("Action statistics must be finite.")
+        if np.any(self.scale <= 0):
+            raise ValueError("Action scale must be positive.")
+
+    @classmethod
+    def fit(cls, values) -> "IRASimActionProcessor":
+        values = np.asarray(values, dtype=np.float32)
+        if values.ndim != 2:
+            raise ValueError("Action statistics require a 2-D array.")
+        values = values[np.isfinite(values).all(axis=1)]
+        if not len(values):
+            raise ValueError("Cannot fit action statistics without finite rows.")
+        return cls(values.mean(axis=0), values.std(axis=0))
+
+    def transform(self, values):
+        return (np.asarray(values, dtype=np.float32) - self.mean) / self.scale
+
+    def inverse_transform(self, values):
+        return np.asarray(values, dtype=np.float32) * self.scale + self.mean
+
+    def inverse_transform_tensor(self, values: torch.Tensor) -> torch.Tensor:
+        mean = torch.as_tensor(self.mean, device=values.device, dtype=values.dtype)
+        scale = torch.as_tensor(self.scale, device=values.device, dtype=values.dtype)
+        return values * scale + mean

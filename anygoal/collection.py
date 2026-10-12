@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+import argparse
+import inspect
+import types
+import typing
+from collections.abc import Sequence
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Literal, get_args, get_origin, get_type_hints
 
 import h5py
 
@@ -37,28 +42,6 @@ def _native_episode_option(dataset_id: str, count: int) -> tuple[str, int]:
     return "episodes", count
 
 
-def _arguments_from_options(dataset_id: str, options: dict[str, Any]) -> list[str]:
-    options = dict(options)
-    if "num_episodes" in options:
-        name, value = _native_episode_option(dataset_id, int(options.pop("num_episodes")))
-        if name in options:
-            raise ValueError(f"Specify only num_episodes or {name}, not both")
-        options[name] = value
-    arguments: list[str] = []
-    for name, value in options.items():
-        if value is None or value is False:
-            continue
-        flag = f"--{name.replace('_', '-')}"
-        arguments.append(flag)
-        if value is True:
-            continue
-        if isinstance(value, (list, tuple)):
-            arguments.extend(str(item) for item in value)
-        else:
-            arguments.append(str(value))
-    return arguments
-
-
 def collect(dataset: str, num_episodes: int | None = None, **options: Any) -> Path:
     """Collect a generated dataset and return its HDF5 path."""
     spec = get_registry().dataset(dataset)
@@ -69,30 +52,65 @@ def collect(dataset: str, num_episodes: int | None = None, **options: Any) -> Pa
     module = import_module(spec.collector)
     options.setdefault("seed", spec.default_seed)
     if num_episodes is not None:
-        options["num_episodes"] = num_episodes
-    arguments = _arguments_from_options(spec.id, options)
-    path = Path(module.run(module.parse_args(arguments))).expanduser().resolve()
+        name, value = _native_episode_option(spec.id, int(num_episodes))
+        if name in options:
+            raise ValueError(f"Specify only num_episodes or {name}, not both")
+        options[name] = value
+    path = Path(module.collect_dataset(**options)).expanduser().resolve()
     return _stamp_dataset_id(path, spec.id)
+
+
+def _argument_type(annotation: Any) -> tuple[Any, tuple[Any, ...] | None]:
+    origin = get_origin(annotation)
+    if origin is Literal:
+        choices = get_args(annotation)
+        return type(choices[0]), choices
+    if origin in (types.UnionType, typing.Union):
+        members = tuple(
+            member for member in get_args(annotation) if member is not type(None)
+        )
+        if len(members) == 1:
+            return _argument_type(members[0])
+    return annotation, None
+
+
+def _parse_cli_options(
+    dataset_id: str, module: Any, arguments: Sequence[str]
+) -> dict[str, Any]:
+    collector = module.collect_dataset
+    signature = inspect.signature(collector)
+    annotations = get_type_hints(collector)
+    parser = argparse.ArgumentParser(prog=f"anygoal collect {dataset_id}")
+    parser.add_argument("--num-episodes", type=int, default=argparse.SUPPRESS)
+    for name, parameter in signature.parameters.items():
+        if name == "num_episodes" or parameter.kind not in (
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            inspect.Parameter.KEYWORD_ONLY,
+        ):
+            continue
+        annotation, choices = _argument_type(annotations.get(name, str))
+        kwargs: dict[str, Any] = {"default": argparse.SUPPRESS}
+        if choices is not None:
+            kwargs["choices"] = choices
+        if annotation is bool:
+            kwargs["action"] = (
+                argparse.BooleanOptionalAction
+                if parameter.default is True
+                else "store_true"
+            )
+        else:
+            kwargs["type"] = annotation
+        parser.add_argument(f"--{name.replace('_', '-')}", **kwargs)
+    return vars(parser.parse_args(list(arguments)))
 
 
 def collect_from_cli(dataset: str, arguments: Sequence[str]) -> Path:
     """Run collection with the collector's native command-line options."""
     spec = get_registry().dataset(dataset)
-    arguments = list(arguments)
     if spec.source != "generated":
         raise ValueError(
             f"{spec.id} is an externally provided base dataset, not a collection target"
         )
-    if "--num-episodes" in arguments:
-        index = arguments.index("--num-episodes")
-        count = int(arguments[index + 1])
-        name, value = _native_episode_option(spec.id, count)
-        arguments[index : index + 2] = [f"--{name.replace('_', '-')}", str(value)]
-    if not any(
-        argument == "--seed" or argument.startswith("--seed=")
-        for argument in arguments
-    ):
-        arguments.extend(["--seed", str(spec.default_seed)])
     module = import_module(spec.collector)
-    path = Path(module.run(module.parse_args(arguments))).expanduser().resolve()
-    return _stamp_dataset_id(path, spec.id)
+    options = _parse_cli_options(spec.id, module, arguments)
+    return collect(spec.id, **options)

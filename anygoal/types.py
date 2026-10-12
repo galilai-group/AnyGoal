@@ -63,8 +63,8 @@ class ModelAdapter(Protocol):
 
 
 @runtime_checkable
-class PredictionAdapter(Protocol):
-    """Model-neutral prediction interface used by the evaluator."""
+class RolloutAdapter(Protocol):
+    """Model-neutral rollout interface used by the evaluator."""
 
     def rollout_errors(
         self, observations: Mapping[str, Any], action_blocks: Any, *, rollout_seed: int

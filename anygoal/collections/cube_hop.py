@@ -1,99 +1,77 @@
 """Collect fixed-length OGBench CubeHop expert trajectories."""
 
-# ruff: noqa: E402
-
 from __future__ import annotations
 
-import argparse
 import json
 import os
-import sys
 from pathlib import Path
 
 import h5py
 import numpy as np
 import stable_worldmodel as swm
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-import anygoal  # noqa: F401
-from anygoal.datasets.cube_support import (
+from anygoal.datasets.cube.support import (
+    CUBE_H5_COLUMNS,
     CubeActionSupport,
     CubeHDF5Writer,
     collect_fixed_length_episodes,
     reference_episode_length,
 )
-from anygoal.datasets.cube_support import CUBE_H5_COLUMNS
-from anygoal.envs import CubeHopPolicy
-from anygoal.envs.cube_hop import (
-    CUBE_HOP_SIDES,
-    EE_START_HIGH,
-    EE_START_LOW,
-    MAX_TRANSLATION_ACTION_NORM,
-    MAX_YAW_ACTION,
-    RIGHT_YAW_DELTA,
-    SIDE_SAMPLING_BOUNDS,
-)
+from anygoal.envs.cube_hop import env as cube_hop_env
+from anygoal.envs.cube_hop import policy as cube_hop_policy
+from anygoal.paths import data_root
 
-
-DATASET_DIR = Path.home() / ".stable_worldmodel" / "datasets"
+DATASET_DIR = data_root()
 DEFAULT_REFERENCE = DATASET_DIR / "cube_single_expert.h5"
 DEFAULT_OUTPUT = DATASET_DIR / "cube_hop_test.h5"
 
 
-def parse_args(arguments: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--episodes", type=int, default=400)
-    parser.add_argument("--num-parallel", type=int, default=8)
-    parser.add_argument("--resolution", type=int, default=224)
-    parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--reference", type=Path, default=DEFAULT_REFERENCE)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--metadata-output", type=Path)
-    parser.add_argument("--overwrite", action="store_true")
-    return parser.parse_args(arguments)
-
-
-def validate_args(args: argparse.Namespace) -> None:
-    if args.episodes <= 0 or args.episodes % len(CUBE_HOP_SIDES) != 0:
+def _validate_options(
+    episodes: int,
+    num_parallel: int,
+    resolution: int,
+    reference: Path,
+    output: Path,
+    metadata_output: Path,
+    overwrite: bool,
+) -> None:
+    if episodes <= 0 or episodes % len(cube_hop_env.CUBE_HOP_SIDES) != 0:
         raise ValueError(
-            f"episodes must be positive and divisible by {len(CUBE_HOP_SIDES)} "
+            "episodes must be positive and divisible by "
+            f"{len(cube_hop_env.CUBE_HOP_SIDES)} "
             "to collect equal right/left halves."
         )
-    if args.num_parallel <= 0 or args.num_parallel > args.episodes:
+    if num_parallel <= 0 or num_parallel > episodes:
         raise ValueError("num-parallel must be in [1, episodes].")
-    if args.resolution <= 0:
+    if resolution <= 0:
         raise ValueError("resolution must be positive.")
-    if not args.reference.is_file():
-        raise FileNotFoundError(args.reference)
-    if args.output.suffix not in (".h5", ".hdf5"):
+    if not reference.is_file():
+        raise FileNotFoundError(reference)
+    if output.suffix not in (".h5", ".hdf5"):
         raise ValueError("output must end in .h5 or .hdf5.")
-    metadata_output = args.metadata_output or args.output.with_suffix(".metadata.json")
-    for path in (args.output, metadata_output):
-        if path.exists() and not args.overwrite:
+    for path in (output, metadata_output):
+        if path.exists() and not overwrite:
             raise FileExistsError(f"Refusing to overwrite: {path}")
 
 
-def summarize_points(points: np.ndarray) -> dict:
+def _summarize_points(points: np.ndarray) -> dict:
     points = np.asarray(points, dtype=np.float64)
     if not len(points):
         return {"count": 0, "min": None, "max": None, "mean": None}
     return {
-        "count": int(len(points)),
+        "count": len(points),
         "min": points.min(axis=0).tolist(),
         "max": points.max(axis=0).tolist(),
         "mean": points.mean(axis=0).tolist(),
     }
 
 
-def summarize_counts(counts: np.ndarray) -> dict:
+def _summarize_counts(counts: np.ndarray) -> dict:
     counts = np.asarray(counts, dtype=np.int64)
     if not len(counts):
         return {"episodes": 0, "total": 0, "min": None, "max": None, "mean": None}
     return {
-        "episodes": int(len(counts)),
+        "episodes": len(counts),
         "total": int(counts.sum()),
         "min": int(counts.min()),
         "max": int(counts.max()),
@@ -101,7 +79,7 @@ def summarize_counts(counts: np.ndarray) -> dict:
     }
 
 
-def validate_output(path: Path, episodes: int, episode_length: int) -> dict:
+def _validate_dataset(path: Path, episodes: int, episode_length: int) -> dict:
     with h5py.File(path, "r") as dataset:
         expected_keys = set(CUBE_H5_COLUMNS) | {"ep_len", "ep_offset"}
         if set(dataset) != expected_keys:
@@ -143,36 +121,54 @@ def validate_output(path: Path, episodes: int, episode_length: int) -> dict:
         }
 
 
-def run(args: argparse.Namespace) -> Path:
-    validate_args(args)
-    episode_length = reference_episode_length(args.reference)
+def collect_dataset(
+    *,
+    episodes: int = 400,
+    num_parallel: int = 8,
+    resolution: int = 224,
+    seed: int = 0,
+    reference: Path = DEFAULT_REFERENCE,
+    output: Path = DEFAULT_OUTPUT,
+    metadata_output: Path | None = None,
+    overwrite: bool = False,
+) -> Path:
+    metadata_output = metadata_output or output.with_suffix(".metadata.json")
+    _validate_options(
+        episodes,
+        num_parallel,
+        resolution,
+        reference,
+        output,
+        metadata_output,
+        overwrite,
+    )
+    episode_length = reference_episode_length(reference)
     action_steps = episode_length - 1
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    metadata_output = args.metadata_output or args.output.with_suffix(".metadata.json")
+    output.parent.mkdir(parents=True, exist_ok=True)
     metadata_output.parent.mkdir(parents=True, exist_ok=True)
-    temporary_output = args.output.with_name(
-        f".{args.output.stem}.tmp-{os.getpid()}{args.output.suffix}"
+    temporary_output = output.with_name(
+        f".{output.stem}.tmp-{os.getpid()}{output.suffix}"
     )
 
-    action_support = CubeActionSupport(args.reference)
+    action_support = CubeActionSupport(reference)
     world = swm.World(
         "anygoal/CubeHop-v0",
-        num_envs=args.num_parallel,
-        image_shape=(args.resolution, args.resolution),
+        num_envs=num_parallel,
+        image_shape=(resolution, resolution),
         max_episode_steps=action_steps,
-        height=args.resolution,
-        width=args.resolution,
+        height=resolution,
+        width=resolution,
     )
-    policy = CubeHopPolicy(action_support=action_support, seed=args.seed)
+    policy = cube_hop_policy.CubeHopPolicy(action_support=action_support, seed=seed)
     world.set_policy(policy)
     writer = CubeHDF5Writer(temporary_output)
     try:
         collection = collect_fixed_length_episodes(
             world,
             writer,
-            episodes=args.episodes,
+            episodes=episodes,
             episode_length=episode_length,
-            seed=args.seed,
+            seed=seed,
         )
     finally:
         world.close()
@@ -194,58 +190,60 @@ def run(args: argparse.Namespace) -> Path:
         "completed_gripper_targets_by_side"
     )
     completed_waypoints_by_side = collection.pop("completed_waypoints_by_side")
-    expected_side_count = args.episodes // len(CUBE_HOP_SIDES)
-    observed_side_counts = {side: episode_sides.count(side) for side in CUBE_HOP_SIDES}
+    expected_side_count = episodes // len(cube_hop_env.CUBE_HOP_SIDES)
+    observed_side_counts = {
+        side: episode_sides.count(side) for side in cube_hop_env.CUBE_HOP_SIDES
+    }
     if any(count != expected_side_count for count in observed_side_counts.values()):
         raise RuntimeError(f"Unbalanced accepted episodes: {observed_side_counts}.")
-    os.replace(temporary_output, args.output)
-    output_validation = validate_output(args.output, args.episodes, episode_length)
+    os.replace(temporary_output, output)
+    output_validation = _validate_dataset(output, episodes, episode_length)
 
     side_sampling = {}
     arrivals_by_side = {}
-    for side in CUBE_HOP_SIDES:
-        bounds = SIDE_SAMPLING_BOUNDS[side]
+    for side in cube_hop_env.CUBE_HOP_SIDES:
+        bounds = cube_hop_env.SIDE_SAMPLING_BOUNDS[side]
         side_sampling[side] = {
             "episodes": observed_side_counts[side],
-            "initial_effector_observed": summarize_points(
+            "initial_effector_observed": _summarize_points(
                 initial_effector_positions_by_side[side]
             ),
             "cube_bounds": [bounds["cube"][0].tolist(), bounds["cube"][1].tolist()],
-            "cube_observed": summarize_points(initial_cube_positions_by_side[side]),
+            "cube_observed": _summarize_points(initial_cube_positions_by_side[side]),
             "gripper_target_bounds": [
                 bounds["gripper_target"][0].tolist(),
                 bounds["gripper_target"][1].tolist(),
             ],
-            "sampled_gripper_targets": summarize_points(
+            "sampled_gripper_targets": _summarize_points(
                 sampled_gripper_targets_by_side[side]
             ),
             "waypoint_bounds": [
                 bounds["waypoint"][0].tolist(),
                 bounds["waypoint"][1].tolist(),
             ],
-            "sampled_waypoints": summarize_points(sampled_waypoints_by_side[side]),
+            "sampled_waypoints": _summarize_points(sampled_waypoints_by_side[side]),
         }
         arrivals_by_side[side] = {
-            "gripper_targets": summarize_counts(
+            "gripper_targets": _summarize_counts(
                 completed_gripper_targets_by_side[side]
             ),
-            "waypoints": summarize_counts(completed_waypoints_by_side[side]),
+            "waypoints": _summarize_counts(completed_waypoints_by_side[side]),
         }
 
     metadata = {
-        "dataset": str(args.output.resolve()),
-        "reference_dataset": str(args.reference.resolve()),
-        "seed": args.seed,
+        "dataset": str(output.resolve()),
+        "reference_dataset": str(reference.resolve()),
+        "seed": seed,
         "collection": collection,
         "uniform_sampling": {
             "initial_effector_bounds": [
-                EE_START_LOW.tolist(),
-                EE_START_HIGH.tolist(),
+                cube_hop_env.EE_START_LOW.tolist(),
+                cube_hop_env.EE_START_HIGH.tolist(),
             ],
-            "initial_effector_observed": summarize_points(initial_effector_positions),
-            "cube_observed": summarize_points(initial_cube_positions),
-            "sampled_gripper_targets": summarize_points(sampled_gripper_targets),
-            "sampled_waypoints": summarize_points(sampled_waypoints),
+            "initial_effector_observed": _summarize_points(initial_effector_positions),
+            "cube_observed": _summarize_points(initial_cube_positions),
+            "sampled_gripper_targets": _summarize_points(sampled_gripper_targets),
+            "sampled_waypoints": _summarize_points(sampled_waypoints),
             "side_sampling": side_sampling,
             "sampling_note": (
                 "Every candidate point is sampled independently and uniformly; "
@@ -254,8 +252,8 @@ def run(args: argparse.Namespace) -> Path:
             ),
         },
         "completed_arrivals": {
-            "gripper_targets": summarize_counts(completed_gripper_targets),
-            "waypoints": summarize_counts(completed_waypoints),
+            "gripper_targets": _summarize_counts(completed_gripper_targets),
+            "waypoints": _summarize_counts(completed_waypoints),
             "by_side": arrivals_by_side,
         },
         "side_assignment": {
@@ -264,11 +262,12 @@ def run(args: argparse.Namespace) -> Path:
             "episode_sides": episode_sides,
         },
         "action_policy": {
-            "translation_xyz_l2_cap_normalized": MAX_TRANSLATION_ACTION_NORM,
-            "translation_l2_cap_meters": 0.05 * MAX_TRANSLATION_ACTION_NORM,
-            "clockwise_yaw_delta_radians": RIGHT_YAW_DELTA,
-            "per_step_yaw_action_cap_normalized": MAX_YAW_ACTION,
-            "per_step_yaw_cap_radians": 0.3 * MAX_YAW_ACTION,
+            "translation_xyz_l2_cap_normalized": cube_hop_env.MAX_TRANSLATION_ACTION_NORM,
+            "translation_l2_cap_meters": 0.05
+            * cube_hop_env.MAX_TRANSLATION_ACTION_NORM,
+            "clockwise_yaw_delta_radians": cube_hop_env.RIGHT_YAW_DELTA,
+            "per_step_yaw_action_cap_normalized": cube_hop_env.MAX_YAW_ACTION,
+            "per_step_yaw_cap_radians": 0.3 * cube_hop_env.MAX_YAW_ACTION,
             "gripper_action": (
                 "-proprio_gripper_opening each step, which tracks absolute "
                 "fully-open position 0"
@@ -283,6 +282,6 @@ def run(args: argparse.Namespace) -> Path:
     temporary_metadata.write_text(json.dumps(metadata, indent=2) + "\n")
     os.replace(temporary_metadata, metadata_output)
     print(json.dumps(metadata, indent=2), flush=True)
-    print(f"Dataset: {args.output}", flush=True)
+    print(f"Dataset: {output}", flush=True)
     print(f"Metadata: {metadata_output}", flush=True)
-    return args.output
+    return output

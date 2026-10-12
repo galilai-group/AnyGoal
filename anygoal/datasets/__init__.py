@@ -6,11 +6,11 @@ from importlib import import_module
 
 
 _EXPORTS = {
-    "CubeEverythingStateAdapter": "cube_true_state",
-    "CubeTrueStateAdapter": "cube_true_state",
-    "InsertPegStateAdapter": "insert_peg_true_state",
-    "PushTTrueStateAdapter": "pusht_true_state",
-    "TwoRoomTrueStateAdapter": "tworoom_true_state",
+    "CubeEverythingStateAdapter": "cube.true_state",
+    "CubeTrueStateAdapter": "cube.true_state",
+    "InsertPegStateAdapter": "insert_peg.true_state",
+    "PushTTrueStateAdapter": "pusht.true_state",
+    "TwoRoomTrueStateAdapter": "tworoom.true_state",
     "MinMaxTransform": "toy_predictor",
     "TrueStateAdapter": "toy_predictor",
     "ZScoreTransform": "toy_predictor",

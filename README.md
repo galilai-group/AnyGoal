@@ -1,8 +1,8 @@
 # AnyGoal
 
 AnyGoal is an installable benchmark API for collecting out-of-distribution
-control datasets and evaluating world models through prediction error,
-planning, and counterfactual analysis. It extends
+control datasets and evaluating world models through rollout error,
+and planning. It extends
 [`stable-worldmodel`](https://github.com/galilai-group/stable-worldmodel) and
 keeps the original model implementations and numerical protocols intact.
 
@@ -38,7 +38,7 @@ pip install 'anygoal[train]'
 pip install 'anygoal[analysis]'
 ```
 
-The wheel contains the public API, registries, schemas, validation, generic
+The wheel contains the public API, registries, validation, generic
 visualization, and CLI. Research training backends that are not redistributable
 are loaded lazily from a source checkout configured by environment variables.
 
@@ -100,6 +100,8 @@ git -C worldmodels/IRASim/stylegan-v \
 Generated variants use their registered in-package collector. Omitted options
 use that dataset's declared defaults, while Python keyword names map directly
 to the corresponding hyphenated CLI options.
+Generated datasets default to `$STABLEWM_HOME/datasets` (or
+`~/.stable_worldmodel/datasets` when `STABLEWM_HOME` is unset).
 
 The Python and terminal interfaces call the same in-package collector:
 
@@ -138,6 +140,9 @@ The public CLI resolves an ID and calls the existing model-specific
 implementation without changing its model code, hyperparameters, seeds, data
 alignment, or normalization:
 
+The exact canonical spellings, accepted aliases, and HDF5 filenames are listed
+in [`scripts/train/training_api_ids.csv`](scripts/train/training_api_ids.csv).
+
 ```bash
 anygoal train driftworld \
   --data ~/.stable_worldmodel/datasets/pusht_expert_train.h5 \
@@ -147,14 +152,11 @@ anygoal train irasim \
   --data ~/.stable_worldmodel/datasets/insert_peg_weak_expert_train.h5 \
   --task insert_peg --dry-run
 
-anygoal eval prediction \
+anygoal eval rollout \
   --model driftworld --dataset avoidt --seed 0 --dry-run
 
 anygoal eval planning \
   --model irasim --dataset cubehop --seed 0 --dry-run
-
-anygoal eval counterfactual \
-  --model lewm --dataset pusht --seed 0 --dry-run
 ```
 
 Remove `--dry-run` after checking resolved paths. Training accepts common
@@ -173,23 +175,7 @@ artifact paths are recorded in the shared workspace inventory at
 `../unstable-worldmodel/checkpoints.md`; public URLs, licenses, and hashes still
 need to be supplied before release.
 
-## Visualize
-
-Generic visualization operates on logical artifact fields, so newly registered
-datasets and models can use it without task-specific code:
-
-```bash
-anygoal visualize dataset-gif \
-  --input /path/to/dataset.h5 --output /tmp/episode.gif
-
-anygoal visualize metrics-plot \
-  --input /path/to/metrics.json --output /tmp/metrics.png
-```
-
-`anygoal visualize --help` describes the required fields, optional inputs, and
-output format for every registered visualizer.
-
-## Site, W&B, and Slurm configuration
+## Site and W&B configuration
 
 An optional site configuration can be generated from the package defaults:
 
@@ -204,30 +190,19 @@ Configuration precedence is:
 CLI override > experiment config > user/site config > package defaults
 ```
 
-The site file centralizes scheduler resources, environment activation, output
-roots, and W&B entity/project/mode. A single generic Slurm worker replaces the
-former model/GPU/seed-specific launchers:
-
-```bash
-anygoal submit --preset gpu-train --job-name driftworld-pusht --dry-run -- \
-  anygoal train driftworld \
-    --data ~/.stable_worldmodel/datasets/pusht_expert_train.h5 --task pusht
-```
-
-Remove `--dry-run` to call `sbatch`. See [`slurm/README.md`](slurm/README.md).
+The site file centralizes output roots and W&B entity/project/mode.
 
 ## Evaluation matrix
 
-[`scripts/analysis/manifest.yaml`](scripts/analysis/manifest.yaml) records the prediction and planning
+[`scripts/analysis/manifest.yaml`](scripts/analysis/manifest.yaml) records the rollout and planning
 matrix without one launcher per combination:
 
 ```bash
 anygoal reproduce scripts/analysis/manifest.yaml
-anygoal reproduce scripts/analysis/manifest.yaml --submit --site ~/.config/anygoal/site.yaml
 ```
 
-The first command only prints commands. Submission is also a dry run unless
-`--no-dry-run` is supplied.
+The command prints each evaluation command in the matrix for execution by the
+workflow or scheduler chosen by the user.
 
 ## Python API and extensions
 
@@ -246,6 +221,55 @@ model, result = anygoal.train(
     task="pusht",
 )
 ```
+
+Planning keeps Stable Worldmodel's model, cost, solver, and policy APIs intact;
+AnyGoal only supplies the registered task evaluation protocol:
+
+```python
+from stable_worldmodel.planning import CEMSolver, GoalMSE, ShootingCostEvaluator
+from stable_worldmodel.policy import PlanConfig, WorldModelPolicy
+
+cost = ShootingCostEvaluator(model=model, objective=GoalMSE())
+solver = CEMSolver(cost=cost, num_samples=300, n_steps=30, device="cuda")
+policy = WorldModelPolicy(
+    solver=solver,
+    config=PlanConfig(horizon=5, receding_horizon=5, action_block=5),
+)
+result = anygoal.plan(
+    policy,
+    data="/path/to/avoidt_test.h5",
+    seed=0,
+)
+```
+
+The planning defaults reproduce the shared evaluation protocol: 50 trials, a
+25-step dataset goal offset, and a 50-step rollout budget. Pass an already
+constructed `world` only when custom Stable Worldmodel environment setup is
+needed. The preserved `anygoal eval planning` commands remain the paper's exact
+model-specific reproduction entry points. `task` is inferred from a canonical
+HDF5 filename or metadata; pass it explicitly for custom or ambiguous data.
+Passing `seed=[0, 1, 2]` returns a dictionary of `PlanningResult` objects keyed
+by evaluation-start sampling seed. Solver randomness remains controlled by the
+caller-built policy.
+
+Open-loop rollout error uses the preserved AnyGoal episode sampling,
+action-block alignment, and model-native error spaces:
+
+```python
+rollout = anygoal.evaluate_rollout(
+    "prejepa",
+    data="/path/to/avoidt_test.h5",
+    checkpoint="/path/to/prejepa_pusht_object.ckpt",
+    seed=[0, 1, 2],
+)
+five_step_mse = rollout[0].five_step_mse
+terminal_25_step_mse = rollout[0].horizons[25].terminal_mse
+```
+
+The default rollout protocol uses three history frames, five environment
+steps per action block, and reports the existing 5-step short error plus
+15- and 25-step autoregressive metrics. Each result records whether its MSE is
+in latent, normalized-state, or normalized-pixel space.
 
 `data` may be a local Stable World-Model HDF5 path or an HDF5 dataset object.
 The returned `model` is the reloaded, evaluation-mode model, while `result`

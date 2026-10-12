@@ -1,1 +1,1 @@
-"""Packaged catalogs, defaults, and schema resources."""
+"""Packaged registry catalog and CLI defaults."""

@@ -21,14 +21,16 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 import anygoal  # noqa: E402,F401
-from anygoal.envs.cube_hop import (  # noqa: E402
+from anygoal.envs.cube_hop.env import (  # noqa: E402
     add_cube_evaluation_metrics,
     prepare_cube_evaluation,
 )
-from anygoal.envs.insert_peg import (  # noqa: E402
+from anygoal.envs.insert_peg.env import (  # noqa: E402
     add_insert_peg_evaluation_metrics,
 )
-from anygoal.evaluation.planning_artifacts import PlanningArtifactRecorder
+from anygoal._planning_artifacts import (  # noqa: E402
+    PlanningArtifactRecorder,
+)
 from anygoal.wm.irasim import (  # noqa: E402
     IRASimActionProcessor,
     IRASimWorldModel,

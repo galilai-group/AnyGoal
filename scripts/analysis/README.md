@@ -23,7 +23,7 @@ python scripts/analysis/build_joint_kde_base_cache.py --help
 
 `build_stat_fullresult.py` evaluates the pairs represented in
 `reports/stat_fullresult.tex` and fills that table. The two visualization
-recipes generate planning and prediction-rollout artifacts for the supported
+recipes generate planning and open-loop rollout artifacts for the supported
 model/dataset matrix.
 
 ```bash
@@ -32,11 +32,23 @@ python scripts/analysis/run_planning_visualization.py --help
 python scripts/analysis/visualize_model_rollouts.py --help
 ```
 
-The public prediction/planning evaluation matrix is retained in
+## Counterfactual analysis
+
+The counterfactual sensitivity protocol is a research analysis for LeWM,
+Sensorimotor, and the toy AdaLN predictor rather than a public AnyGoal evaluation
+API. Its fixed intervention actions live in
+`anygoal/resources/counterfactual/`.
+
+```bash
+python -m scripts.analysis.run_counterfactual_evaluation --help
+python -m scripts.analysis.plot_counterfactual_grids --help
+python -m scripts.analysis.summarize_counterfactual_metrics --help
+python -m scripts.analysis.update_insert_peg_after_grip_bias --help
+```
+
+The public rollout/planning evaluation matrix is retained in
 [`manifest.yaml`](manifest.yaml) and can be dispatched with:
 
 ```bash
 anygoal reproduce scripts/analysis/manifest.yaml
-anygoal reproduce scripts/analysis/manifest.yaml --submit \
-  --site ~/.config/anygoal/site.yaml
 ```

@@ -1,14 +1,17 @@
+import json
+
 import numpy as np
 
-from anygoal.evaluation.counterfactual import (
+from scripts.analysis.counterfactual_metrics import (
     counterfactual_sensitivity,
     counterfactual_sensitivity_uniformity,
     evaluate_counterfactual_metrics,
     factual_output_variation,
     relative_action_sensitivity,
 )
-from anygoal.evaluation.counterfactual_runner import (
+from scripts.analysis.run_counterfactual_evaluation import (
     _insert_peg_after_grip_mask,
+    _write_metrics,
 )
 
 
@@ -75,3 +78,54 @@ def test_insert_peg_after_grip_requires_ten_close_synchronized_frames():
     mask = _insert_peg_after_grip_mask(observation)
     assert not mask[11]
     assert not mask[12]
+
+
+def test_runner_writes_only_average_and_final_representations(tmp_path):
+    layers = tuple(str(index) for index in range(6)) + ("final",)
+    factual_outputs = {
+        layer: np.asarray([[0.0], [index + 1.0], [index + 2.0]])
+        for index, layer in enumerate(layers)
+    }
+    sensitivities = {
+        "default": {
+            layer: np.full(3, index + 1.0)
+            for index, layer in enumerate(layers)
+        }
+    }
+    protocols = {
+        "default": {
+            "actions": np.asarray([[0.0], [1.0]]),
+            "bias_axes": ("distance",),
+        }
+    }
+
+    _write_metrics(
+        tmp_path,
+        metadata={"model": "test", "environment": "test"},
+        factual_outputs=factual_outputs,
+        sensitivities=sensitivities,
+        biases={"distance": np.asarray([0.0, 1.0, 2.0])},
+        protocols=protocols,
+        bins=2,
+        visualize=False,
+    )
+
+    metrics = json.loads((tmp_path / "metrics.json").read_text())
+    assert tuple(metrics["protocols"]["default"]["representations"]) == (
+        "average",
+        "final",
+    )
+    with np.load(tmp_path / "counterfactual_cache.npz") as cache:
+        sensitivity_keys = {
+            key for key in cache.files if key.startswith("sensitivity__")
+        }
+        assert sensitivity_keys == {
+            "sensitivity__default__average",
+            "sensitivity__default__final",
+        }
+        np.testing.assert_allclose(
+            cache["sensitivity__default__average"], 4.0
+        )
+        np.testing.assert_allclose(
+            cache["sensitivity__default__final"], 7.0
+        )

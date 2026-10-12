@@ -24,13 +24,13 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(REPO_ROOT), str(REPO_ROOT / "scripts/eval")]
 
 from eval import build_adapter, resolve_path  # noqa: E402
-from anygoal.evaluation.prediction import PredictionProtocol, _gather_batch  # noqa: E402
-from anygoal.evaluation.prediction_models import (  # noqa: E402
-    DriftWorldPredictionAdapter,
-    IRASimPredictionAdapter,
-    LatentARPredictionAdapter,
-    PreJEPAPredictionAdapter,
-    TrueStatePredictionAdapter,
+from anygoal.evaluation.rollout import RolloutProtocol, _gather_batch  # noqa: E402
+from anygoal.evaluation._rollout_adapters import (  # noqa: E402
+    DriftWorldRolloutAdapter,
+    IRASimRolloutAdapter,
+    LatentARRolloutAdapter,
+    PreJEPARolloutAdapter,
+    TrueStateRolloutAdapter,
     standardize_action_blocks,
     standardize_tensor,
 )
@@ -83,7 +83,7 @@ def save_gif(path: Path, frames: list[np.ndarray]) -> None:
 @torch.inference_mode()
 def rollout(adapter, observations, actions, seed: int, steps: int) -> tuple[list[np.ndarray], str]:
     history_length = adapter.history_length
-    if isinstance(adapter, LatentARPredictionAdapter):
+    if isinstance(adapter, LatentARRolloutAdapter):
         pixels = adapter.pixel_preprocessor(observations["pixels"].to(adapter.device))
         embeddings = adapter.model.encode({"pixels": pixels})["emb"]
         normalized_actions = standardize_action_blocks(actions.to(adapter.device), adapter.action_processor)
@@ -96,8 +96,8 @@ def rollout(adapter, observations, actions, seed: int, steps: int) -> tuple[list
             history = torch.cat((history[:, 1:], prediction[:, None]), dim=1)
         return frames, "latent_heatmap"
 
-    if isinstance(adapter, PreJEPAPredictionAdapter):
-        from anygoal.evaluation.prediction_models import imagenet_preprocess
+    if isinstance(adapter, PreJEPARolloutAdapter):
+        from anygoal.evaluation._rollout_adapters import imagenet_preprocess
         pixels = imagenet_preprocess(observations["pixels"].to(adapter.device), adapter.image_size)
         normalized_actions = standardize_action_blocks(actions.to(adapter.device), adapter.action_processor)
         padded = torch.cat((normalized_actions, normalized_actions.new_zeros(1, 1, normalized_actions.shape[-1])), dim=1)
@@ -116,7 +116,7 @@ def rollout(adapter, observations, actions, seed: int, steps: int) -> tuple[list
             history = torch.cat((history[:, 1:], prediction), dim=1)
         return frames, "latent_heatmap"
 
-    if isinstance(adapter, TrueStatePredictionAdapter):
+    if isinstance(adapter, TrueStateRolloutAdapter):
         states = adapter._encode_states(observations)
         normalized_actions = standardize_action_blocks(actions.to(adapter.device), adapter.action_processor)
         history = states[:, :history_length]
@@ -135,7 +135,7 @@ def rollout(adapter, observations, actions, seed: int, steps: int) -> tuple[list
     pixels = adapter.model.preprocess_pixels(observations["pixels"].to(adapter.device))
     normalized_actions = standardize_action_blocks(actions.to(adapter.device), adapter.action_processor)
     frames = []
-    if isinstance(adapter, DriftWorldPredictionAdapter):
+    if isinstance(adapter, DriftWorldRolloutAdapter):
         history = pixels[:, :history_length]
         for step in range(steps):
             candidate = normalized_actions[:, None, step + history_length - 1:step + history_length]
@@ -145,7 +145,7 @@ def rollout(adapter, observations, actions, seed: int, steps: int) -> tuple[list
             prediction = adapter.model._rollout_once(history, adapter.model.prepare_model_actions(info, candidate), seed + step)[:, 0].clamp(-1, 1)
             frames.append(uint8_rgb(prediction[0]))
             history = torch.cat((history[:, 1:], prediction[:, None]), dim=1)
-    elif isinstance(adapter, IRASimPredictionAdapter):
+    elif isinstance(adapter, IRASimRolloutAdapter):
         encoded = adapter.model._encode(pixels[:, :history_length].flatten(0, 1), seed)
         history = encoded.reshape(1, history_length, *encoded.shape[1:])
         for step in range(steps):
@@ -170,7 +170,7 @@ def main() -> None:
     args = parser.parse_args()
     os.environ["LEWM_SOURCE_ROOT"] = str(REPO_ROOT / "worldmodels/lewm")
     os.environ["IRASIM_SCHEDULER_PATH"] = str(REPO_ROOT / "worldmodels/IRASim/pretrained_models/scheduler")
-    cfg = OmegaConf.load(REPO_ROOT / "scripts/eval/config/prediction_eval.yaml")
+    cfg = OmegaConf.load(REPO_ROOT / "scripts/eval/config/rollout_eval.yaml")
     environment = ENVIRONMENT_ALIASES.get(args.environment, args.environment)
     model_name = ALIASES.get(args.model, args.model)
     dataset_cfg = cfg.datasets[environment]
@@ -184,7 +184,7 @@ def main() -> None:
         print(f"already complete: {output}")
         return
     adapter, checkpoint, metadata = build_adapter(model_name, model_cfg, dataset, device=torch.device(args.device), checkpoint_override=None, training_config_override=None, planning_config_override=None, run_directory_override=None, history_length=3)
-    protocol = PredictionProtocol(history_length=3, frame_skip=5, horizons=(25,), num_episodes=5, batch_size=1)
+    protocol = RolloutProtocol(history_length=3, frame_skip=5, horizons=(25,), num_episodes=5, batch_size=1)
     manifest = []
     for episode_index in range(5):
         episode = dataset.load_episode(episode_index)

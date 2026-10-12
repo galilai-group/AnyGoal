@@ -1,81 +1,88 @@
 """Collect StackT-v2 trajectories with precise, PushT-supported rotation."""
 
-# ruff: noqa: E402
-
 from __future__ import annotations
 
-import argparse
 import os
-import sys
 from pathlib import Path
 
 import h5py
 import stable_worldmodel as swm
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-import anygoal  # noqa: F401
-from anygoal.datasets.pusht_support import (
+from anygoal.datasets.pusht.support import (
     BlockAngleSupportFilter,
     PushTTrainSchemaWriter,
     collect_accepted_episodes,
     complete_on_block_goal,
 )
-from anygoal.envs import StackTV2Policy
+from anygoal.envs.stackt import policy as stackt_policy
 from anygoal.paths import data_root
-
 
 COLLECT_COLUMNS = {"action", "pixels", "proprio", "state"}
 DEFAULT_OUTPUT = data_root() / "stackt_test.h5"
 DEFAULT_REFERENCE = data_root() / "pusht_expert_train.h5"
 
 
-def parse_args(arguments: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--episodes", type=int, default=400)
-    parser.add_argument("--min-frames", type=int, default=20)
-    parser.add_argument("--num-parallel", type=int, default=8)
-    parser.add_argument("--max-steps", type=int, default=500)
-    parser.add_argument("--resolution", type=int, default=224)
-    parser.add_argument("--speed", type=float, default=0.7)
-    parser.add_argument("--clearance", type=float, default=20.0)
-    parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--minimum-angle-support", type=float, default=0.955)
-    parser.add_argument("--reference", type=Path, default=DEFAULT_REFERENCE)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--overwrite", action="store_true")
-    return parser.parse_args(arguments)
-
-
-def validate_args(args: argparse.Namespace) -> None:
-    if args.episodes <= 0:
+def _validate_options(
+    episodes: int,
+    min_frames: int,
+    num_parallel: int,
+    max_steps: int,
+    speed: float,
+    minimum_angle_support: float,
+    reference: Path,
+    output: Path,
+    overwrite: bool,
+) -> None:
+    if episodes <= 0:
         raise ValueError("episodes must be positive")
-    if args.num_parallel <= 0 or args.num_parallel > args.episodes:
+    if num_parallel <= 0 or num_parallel > episodes:
         raise ValueError("num-parallel must be in [1, episodes]")
-    if args.min_frames <= 0 or args.min_frames > args.max_steps:
+    if min_frames <= 0 or min_frames > max_steps:
         raise ValueError("min-frames must be in [1, max-steps]")
-    if not 0.0 < args.speed <= 1.0:
+    if not 0.0 < speed <= 1.0:
         raise ValueError("speed must be in (0, 1]")
-    if not 0.95 <= args.minimum_angle_support <= 1.0:
+    if not 0.95 <= minimum_angle_support <= 1.0:
         raise ValueError("minimum-angle-support must be in [0.95, 1]")
-    if not args.reference.is_file():
-        raise FileNotFoundError(args.reference)
-    if args.output.suffix not in (".h5", ".hdf5"):
+    if not reference.is_file():
+        raise FileNotFoundError(reference)
+    if output.suffix not in (".h5", ".hdf5"):
         raise ValueError("output must end in .h5 or .hdf5")
-    if args.output.exists() and not args.overwrite:
-        raise FileExistsError(f"Refusing to overwrite: {args.output}")
+    if output.exists() and not overwrite:
+        raise FileExistsError(f"Refusing to overwrite: {output}")
 
 
-def run(args: argparse.Namespace) -> Path:
-    validate_args(args)
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    temporary_output = args.output.with_name(
-        f".{args.output.stem}.tmp-{os.getpid()}{args.output.suffix}"
+def collect_dataset(
+    *,
+    episodes: int = 400,
+    min_frames: int = 20,
+    num_parallel: int = 8,
+    max_steps: int = 500,
+    resolution: int = 224,
+    speed: float = 0.7,
+    clearance: float = 20.0,
+    seed: int = 0,
+    minimum_angle_support: float = 0.955,
+    reference: Path = DEFAULT_REFERENCE,
+    output: Path = DEFAULT_OUTPUT,
+    overwrite: bool = False,
+) -> Path:
+    _validate_options(
+        episodes,
+        min_frames,
+        num_parallel,
+        max_steps,
+        speed,
+        minimum_angle_support,
+        reference,
+        output,
+        overwrite,
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary_output = output.with_name(
+        f".{output.stem}.tmp-{os.getpid()}{output.suffix}"
     )
     angle_filter = BlockAngleSupportFilter(
-        args.reference, minimum_fraction=args.minimum_angle_support
+        reference, minimum_fraction=minimum_angle_support
     )
     rejected_angle_support = 0
 
@@ -88,21 +95,21 @@ def run(args: argparse.Namespace) -> Path:
 
     world = swm.World(
         "anygoal/StackT-v2",
-        num_envs=args.num_parallel,
-        image_shape=(args.resolution, args.resolution),
-        max_episode_steps=args.max_steps,
-        resolution=args.resolution,
-        clearance=args.clearance,
+        num_envs=num_parallel,
+        image_shape=(resolution, resolution),
+        max_episode_steps=max_steps,
+        resolution=resolution,
+        clearance=clearance,
     )
-    world.set_policy(StackTV2Policy(speed=args.speed, seed=args.seed))
-    writer = PushTTrainSchemaWriter(temporary_output, args.resolution)
+    world.set_policy(stackt_policy.StackTV2Policy(speed=speed, seed=seed))
+    writer = PushTTrainSchemaWriter(temporary_output, resolution)
     try:
         stats = collect_accepted_episodes(
             world,
             writer,
-            episodes=args.episodes,
-            min_frames=args.min_frames,
-            seed=args.seed,
+            episodes=episodes,
+            min_frames=min_frames,
+            seed=seed,
             columns=COLLECT_COLUMNS,
             accept_episode=accept_supported_episode,
             complete_episode=complete_on_block_goal,
@@ -110,19 +117,17 @@ def run(args: argparse.Namespace) -> Path:
     finally:
         world.close()
 
-    os.replace(temporary_output, args.output)
-    with h5py.File(args.output, "a") as dataset:
+    os.replace(temporary_output, output)
+    with h5py.File(output, "a") as dataset:
         dataset.attrs["environment"] = "anygoal/StackT-v2"
-        dataset.attrs["pusht_angle_reference"] = str(args.reference.resolve())
-        dataset.attrs["minimum_episode_angle_support"] = (
-            args.minimum_angle_support
-        )
+        dataset.attrs["pusht_angle_reference"] = str(reference.resolve())
+        dataset.attrs["minimum_episode_angle_support"] = minimum_angle_support
         dataset.attrs["angle_kde_bins"] = 256
     print(
-        f'{stats["accepted"]} accepted / {stats["attempted"]} attempted '
-        f'({stats["rejected_short"]} short, '
-        f'{stats["rejected_failed"]} failed, '
+        f"{stats['accepted']} accepted / {stats['attempted']} attempted "
+        f"({stats['rejected_short']} short, "
+        f"{stats['rejected_failed']} failed, "
         f"{rejected_angle_support} angle-support rejected)"
     )
-    print(f"Dataset: {args.output}")
-    return args.output
+    print(f"Dataset: {output}")
+    return output
