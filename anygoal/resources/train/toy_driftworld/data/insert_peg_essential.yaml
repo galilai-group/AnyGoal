@@ -1,5 +1,5 @@
 name: insert_peg_essential
-dataset_name: insert_peg_weak_expert_train.h5
+dataset_name: manipulator_insert_peg_weak_expert_train.h5
 cache_dir: null
 frameskip: 5
 state_dim: 33

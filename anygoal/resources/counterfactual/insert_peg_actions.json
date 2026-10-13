@@ -1,5 +1,5 @@
 {
-  "dataset_path": "insert_peg_weak_expert_train.h5",
+  "dataset_path": "manipulator_insert_peg_weak_expert_train.h5",
   "selection": "maximum axis-aligned 3x3 hand (x,z) endpoint spacing around the zero-action endpoint at a representative expert anchor state",
   "seed": 20260914,
   "frameskip": 5,

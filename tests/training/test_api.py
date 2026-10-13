@@ -133,7 +133,7 @@ def test_toy_defaults_add_only_group_selection_and_data_path(
 
 def test_prejepa_output_directory_controls_stablewm_checkpoint_root(tmp_path):
     data = write_hdf5(
-        tmp_path / "insert_peg_weak_expert_train.h5",
+        tmp_path / "manipulator_insert_peg_weak_expert_train.h5",
         environment="anygoal/InsertPeg-v0",
     )
     output = tmp_path / "prejepa"

@@ -58,6 +58,11 @@ build-backend = "hatchling.build"
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+addopts = "-m 'not integration and not matrix_e2e'"
+markers = [
+    "integration: reduced tests using real environments or native components",
+    "matrix_e2e: artifact-backed reduced runs over every supported combination",
+]
 
 [tool.ruff]
 extend-exclude = ["worldmodels"]

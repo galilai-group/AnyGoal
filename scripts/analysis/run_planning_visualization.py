@@ -56,7 +56,7 @@ DATASET_NAME = {
     "cube": "cube_single_expert",
     "cube_hop": "cube_hop_test",
     "cube_diagonal": "cube_diagonal_test",
-    "insert_peg": "insert_peg_weak_expert_train",
+    "insert_peg": "manipulator_insert_peg_weak_expert_train",
     "avoid_peg": "avoid_peg_test",
     "extract_peg": "extract_peg_test",
     "tworoom": "tworoom",

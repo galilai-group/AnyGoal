@@ -2,6 +2,7 @@ model:
   source_root: null
   checkpoint_root: ~/.cache/anygoal/checkpoints/sensorimotor
   run_name: tworoom_inverse_lambda_0p1_seed0
+  config: "resource:train/sensorimotor/tworoom.yaml"
   checkpoint: ~/.stable_worldmodel/anygoal/sensorimotor_tworoom.ckpt
 
 dataset:

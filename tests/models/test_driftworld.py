@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 from types import SimpleNamespace
 
 import gymnasium as gym
@@ -25,10 +24,6 @@ from anygoal.wm.driftworld import (
     DriftWorldWorldModelPolicy,
     driftworld_image_transform,
 )
-
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-
 
 class FakeEMA(nn.Module):
     def forward(self, noise, history, actions):

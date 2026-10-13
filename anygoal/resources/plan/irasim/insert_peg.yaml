@@ -19,7 +19,7 @@ model:
 dataset:
   root: ~/.stable_worldmodel
   keys_to_cache: [action]
-  action_stats_name: insert_peg_weak_expert_train
+  action_stats_name: manipulator_insert_peg_weak_expert_train
 
 world:
   env_name: anygoal/InsertPeg-v0
@@ -47,7 +47,7 @@ eval:
   goal_offset_steps: 25
   eval_budget: 50
   render_size: 224
-  dataset_name: insert_peg_weak_expert_train
+  dataset_name: manipulator_insert_peg_weak_expert_train
   callables:
     - method: set_state
       args:

@@ -2,6 +2,7 @@ model:
   source_root: null
   checkpoint_root: ${oc.env:SENSORIMOTOR_CHECKPOINT_ROOT,'~/.cache/anygoal/checkpoints/sensorimotor'}
   run_name_template: cube_inverse_lambda_1_seed3072
+  config: "resource:train/sensorimotor/cube.yaml"
   checkpoint: ~/.stable_worldmodel/anygoal/sensorimotor_cube.ckpt
   seeds: [0, 1, 2]
 

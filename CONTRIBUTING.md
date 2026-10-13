@@ -8,15 +8,24 @@ include before/after numerical evidence.
 
 ## Development setup
 
-Install an editable development build and run the contract suite:
+Install an editable development build and run the default fast suite:
 
 ```bash
-pip install -e '.[dev,analysis]'
-pytest -q tests/contract
+pip install -e '.[dev]'
+pytest -q
 anygoal list datasets
 anygoal list models
 anygoal list visualizers
 ```
+
+Tests are split into three levels. `pytest -q` runs deterministic unit and
+contract coverage without external artifacts. `pytest -q -m integration` uses
+real environments and native components at reduced scale. After installing all
+upstream model sources and provisioning canonical datasets/checkpoints, run
+`pytest -q -m matrix_e2e` on an allocated GPU to execute every supported
+combination with one or a few steps. This last level checks end-to-end wiring;
+it is intentionally not a paper-scale reproduction. See `tests/README.md` for
+the matrix and environment variables.
 
 Do not commit data, checkpoints, credentials, personal paths, W&B run IDs, or
 cluster policy. Dataset artifacts belong outside the repository and checkpoint

@@ -54,8 +54,8 @@ datasets:
     base_environment: tworoom
     variant_identifier: triangles
   insert_peg:
-    path: ${dataset_root}/datasets/insert_peg_weak_expert_train.h5
-    dataset_name: insert_peg_weak_expert_train
+    path: ${dataset_root}/datasets/manipulator_insert_peg_weak_expert_train.h5
+    dataset_name: manipulator_insert_peg_weak_expert_train
     base_environment: insert_peg
     variant_identifier: base
   avoid_peg:
@@ -86,19 +86,19 @@ models:
   sensorimotor:
     insert_peg:
       checkpoint: ~/.stable_worldmodel/anygoal/sensorimotor_insertpeg.ckpt
-      training_config: ~/.cache/anygoal/checkpoints/sensorimotor_world_model/20260910_insert_peg_weak_expert_inverse_lambda_1_seed0/config.yaml
+      training_config: resource:train/sensorimotor/insert_peg.yaml
       planning_config: plan/sensorimotor/insert_peg.yaml
     pusht:
       checkpoint: ~/.stable_worldmodel/anygoal/sensorimotor_pusht.ckpt
-      run_directory: ~/.cache/anygoal/checkpoints/sensorimotor/pusht_inverse_lambda_30_seed0
+      training_config: resource:train/sensorimotor/pusht.yaml
       planning_config: plan/sensorimotor/pusht.yaml
     cube:
       checkpoint: ~/.stable_worldmodel/anygoal/sensorimotor_cube.ckpt
-      run_directory: ~/.cache/anygoal/checkpoints/sensorimotor/cube_inverse_lambda_1_seed3072
+      training_config: resource:train/sensorimotor/cube.yaml
       planning_config: plan/sensorimotor/cube.yaml
     tworoom:
       checkpoint: ~/.stable_worldmodel/anygoal/sensorimotor_tworoom.ckpt
-      run_directory: ~/.cache/anygoal/checkpoints/sensorimotor/tworoom_inverse_lambda_0p1_seed0
+      training_config: resource:train/sensorimotor/tworoom.yaml
       planning_config: plan/sensorimotor/tworoom.yaml
   prejepa:
     insert_peg:
@@ -116,42 +116,42 @@ models:
   adaln_predictor:
     insert_peg:
       checkpoint: ~/.stable_worldmodel/anygoal/toy-adaln_insertpeg.pt
-      training_config: ~/.cache/anygoal/checkpoints/20260910_insert_peg_toy_predictors/20260910_insert_peg_essential_adaln_01/config.yaml
+      training_config: resource:eval/training/toy/adaln/insertpeg.yaml
     pusht:
       checkpoint: ~/.stable_worldmodel/anygoal/toy-adaln_pusht.pt
-      training_config: ~/.cache/anygoal/checkpoints/toy_predictors_20260723_frameskip5_10d/20260723_pusht_adaln/config.yaml
+      training_config: resource:eval/training/toy/adaln/pusht.yaml
     cube:
       checkpoint: ~/.stable_worldmodel/anygoal/toy-adaln_cube.pt
-      training_config: ~/.cache/anygoal/checkpoints/toy_predictors_20260826_cube_everything_toy_predictors/20260826_cube_everything_adaln/config.yaml
+      training_config: resource:eval/training/toy/adaln/cube.yaml
     tworoom:
       checkpoint: ~/.stable_worldmodel/anygoal/toy-adaln_tworoom.pt
-      training_config: ~/.cache/anygoal/checkpoints/toy_predictors_20260825_tworoom_toy_predictors/20260825_tworoom_essential_adaln/config.yaml
+      training_config: resource:eval/training/toy/adaln/tworoom.yaml
   action_duplicated_predictor:
     insert_peg:
       checkpoint: ~/.stable_worldmodel/anygoal/toy-action-duplicate_insertpeg.pt
-      training_config: ~/.cache/anygoal/checkpoints/20260910_insert_peg_toy_predictors/20260910_insert_peg_essential_action_duplicate_01/config.yaml
+      training_config: resource:eval/training/toy/action_duplicate/insertpeg.yaml
     pusht:
       checkpoint: ~/.stable_worldmodel/anygoal/toy-action-duplicate_pusht.pt
-      training_config: ~/.cache/anygoal/checkpoints/toy_predictors_20260723_frameskip5_10d/20260723_pusht_action_duplicate/config.yaml
+      training_config: resource:eval/training/toy/action_duplicate/pusht.yaml
     cube:
       checkpoint: ~/.stable_worldmodel/anygoal/toy-action-duplicate_cube.pt
-      training_config: ~/.cache/anygoal/checkpoints/toy_predictors_20260826_cube_everything_toy_predictors/20260826_cube_everything_action_duplicate/config.yaml
+      training_config: resource:eval/training/toy/action_duplicate/cube.yaml
     tworoom:
       checkpoint: ~/.stable_worldmodel/anygoal/toy-action-duplicate_tworoom.pt
-      training_config: ~/.cache/anygoal/checkpoints/toy_predictors_20260825_tworoom_toy_predictors/20260825_tworoom_essential_action_duplicate/config.yaml
+      training_config: resource:eval/training/toy/action_duplicate/tworoom.yaml
   toy_driftworld:
     insert_peg:
       checkpoint: ~/.stable_worldmodel/anygoal/toy-driftworld_insertpeg.pt
-      training_config: ~/.cache/anygoal/checkpoints/20260910_insert_peg_toy_predictors/20260910_insert_peg_essential_drift_lr1e-4_01/config.yaml
+      training_config: resource:eval/training/toy/driftworld/insertpeg.yaml
     pusht:
       checkpoint: ~/.stable_worldmodel/anygoal/toy-driftworld_pusht.pt
-      training_config: ~/.cache/anygoal/checkpoints/toy_driftworld_bs128_500k_lr_sweep_20260902/20260902_pusht_drift_state_predictor_bs128_500k_lr1e-4/config.yaml
+      training_config: resource:eval/training/toy/driftworld/pusht.yaml
     cube:
       checkpoint: ~/.stable_worldmodel/anygoal/toy-driftworld_cube.pt
-      training_config: ~/.cache/anygoal/checkpoints/toy_driftworld_bs128_500k_lr_sweep_20260902/20260902_cube_drift_state_predictor_bs128_500k_lr1e-4/config.yaml
+      training_config: resource:eval/training/toy/driftworld/cube.yaml
     tworoom:
       checkpoint: ~/.stable_worldmodel/anygoal/toy-driftworld_tworoom.pt
-      training_config: ~/.cache/anygoal/checkpoints/toy_driftworld_bs128_500k_lr_sweep_20260902/20260902_tworoom_drift_state_predictor_bs128_500k_lr1e-4/config.yaml
+      training_config: resource:eval/training/toy/driftworld/tworoom.yaml
   driftworld:
     insert_peg:
       checkpoint: ~/.stable_worldmodel/anygoal/driftworld_insertpeg.pt

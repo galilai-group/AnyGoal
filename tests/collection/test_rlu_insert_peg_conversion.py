@@ -10,7 +10,7 @@ import pytest
 
 spec = importlib.util.spec_from_file_location(
     "convert_rlu",
-    Path(__file__).resolve().parents[1] / "scripts/data/convert_rlu_insert_peg.py",
+    Path(__file__).resolve().parents[2] / "scripts/data/convert_rlu_insert_peg.py",
 )
 converter = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(converter)

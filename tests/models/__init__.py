@@ -1,0 +1,1 @@
+"""World-model adapter tests."""

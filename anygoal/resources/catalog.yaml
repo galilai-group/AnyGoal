@@ -79,7 +79,7 @@ datasets:
   insertpeg:
     aliases: [insert_peg]
     family: insert_peg
-    filename: insert_peg_weak_expert_train.h5
+    filename: manipulator_insert_peg_weak_expert_train.h5
     environment: anygoal/InsertPeg-v0
     evaluation_id: insert_peg
     config_stem: insert_peg

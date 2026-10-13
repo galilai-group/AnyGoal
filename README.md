@@ -149,7 +149,7 @@ anygoal train driftworld \
   --task pusht --dry-run
 
 anygoal train irasim \
-  --data ~/.stable_worldmodel/datasets/insert_peg_weak_expert_train.h5 \
+  --data ~/.stable_worldmodel/datasets/manipulator_insert_peg_weak_expert_train.h5 \
   --task insert_peg --dry-run
 
 anygoal eval rollout \
@@ -286,9 +286,18 @@ groups. Required I/O contracts, artifact metadata, and tests are documented in
 ## Development
 
 ```bash
-pytest -q tests/contract
+pytest -q
+pytest -q -m integration
+# On an allocated GPU with canonical datasets/checkpoints/sources:
+pytest -q -m matrix_e2e
 python -m build
 ```
+
+The default suite is artifact-free. `integration` uses real environments and
+native components with reduced inputs, while `matrix_e2e` runs all supported
+model/dataset combinations at reduced scale. It is not a paper-reproduction
+suite; details and required environment variables are in
+[`tests/README.md`](tests/README.md).
 
 Model/data integrations may add compatibility tests, but scientific changes to
 losses, preprocessing, action conventions, temporal alignment, solver defaults,

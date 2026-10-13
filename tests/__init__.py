@@ -1,0 +1,1 @@
+"""AnyGoal test suite."""

@@ -1,8 +1,8 @@
 model:
   source_root: null
   checkpoint_root: ~/.cache/anygoal/checkpoints/sensorimotor_world_model
-  run_name: 20260910_insert_peg_weak_expert_inverse_lambda_1_seed0
-  config: ~/.cache/anygoal/checkpoints/sensorimotor_world_model/20260910_insert_peg_weak_expert_inverse_lambda_1_seed0/config.yaml
+  run_name: 20260910_manipulator_insert_peg_weak_expert_inverse_lambda_1_seed0
+  config: "resource:train/sensorimotor/insert_peg.yaml"
   checkpoint: ~/.stable_worldmodel/anygoal/sensorimotor_insertpeg.ckpt
 
 dataset:
@@ -36,7 +36,7 @@ eval:
   goal_offset_steps: 25
   eval_budget: 50
   img_size: 224
-  dataset_name: insert_peg_weak_expert_train
+  dataset_name: manipulator_insert_peg_weak_expert_train
   save_video: false
   callables:
     - method: set_state

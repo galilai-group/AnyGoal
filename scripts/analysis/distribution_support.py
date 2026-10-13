@@ -829,14 +829,14 @@ def batch_pairs() -> list[tuple[Path, Path, str, str, tuple[str, ...]]]:
             PUSHT_TABLE_FEATURES,
         ),
         (
-            find_dataset("insert_peg_weak_expert_train.h5"),
+            find_dataset("manipulator_insert_peg_weak_expert_train.h5"),
             find_dataset("avoid_peg_test.h5"),
             "Insert-Peg",
             "Avoid-Peg",
             INSERT_PEG_TABLE_FEATURES,
         ),
         (
-            find_dataset("insert_peg_weak_expert_train.h5"),
+            find_dataset("manipulator_insert_peg_weak_expert_train.h5"),
             find_dataset("extract_peg_test.h5"),
             "Insert-Peg",
             "Extract-Peg",

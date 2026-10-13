@@ -109,7 +109,7 @@ def main() -> None:
     parser.add_argument(
         "--dataset",
         type=Path,
-        default=data_root() / "insert_peg_weak_expert_train.h5",
+        default=data_root() / "manipulator_insert_peg_weak_expert_train.h5",
     )
     parser.add_argument(
         "--results-root",

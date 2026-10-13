@@ -2,7 +2,7 @@ kind,canonical_id,accepted_aliases,canonical_hdf5_filename,valid_task_for_anygoa
 task_data,pusht,push_t,pusht_expert_train.h5,yes,pusht|cube|tworoom|insert_peg,Use task="pusht"; data is the PushT HDF5 path.
 task_data,cube,cube_single,cube_single_expert.h5,yes,pusht|cube|tworoom|insert_peg,Use task="cube"; data is the Cube HDF5 path.
 task_data,tworoom,two_room,tworoom.h5,yes,pusht|cube|tworoom|insert_peg,Use task="tworoom"; data is the TwoRoom HDF5 path.
-task_data,insertpeg,insert_peg,insert_peg_weak_expert_train.h5,yes,pusht|cube|tworoom|insert_peg,Use task="insert_peg" or canonical task="insertpeg".
+task_data,insertpeg,insert_peg,manipulator_insert_peg_weak_expert_train.h5,yes,pusht|cube|tworoom|insert_peg,Use task="insert_peg" or canonical task="insertpeg".
 dataset_only,avoidt,avoid_t,avoidt_test.h5,no,,Evaluation/collection dataset; not a training task profile.
 dataset_only,stackt,stack_t,stackt_test.h5,no,,Evaluation/collection dataset; not a training task profile.
 dataset_only,pusht-antigoal,pusht_antigoal|push_t_antigoal,pusht_antigoal_test.h5,no,,Evaluation/collection dataset; not a training task profile.

@@ -20,7 +20,7 @@ from anygoal.paths import data_root
 os.environ.setdefault("MUJOCO_GL", "osmesa")
 
 
-DEFAULT_REFERENCE = data_root() / "insert_peg_weak_expert_train.h5"
+DEFAULT_REFERENCE = data_root() / "manipulator_insert_peg_weak_expert_train.h5"
 DEFAULT_OUTPUT = data_root() / "extract_peg_test.h5"
 DEFAULT_SUPPORT_CACHE = (
     Path(

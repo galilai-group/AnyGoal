@@ -82,14 +82,14 @@ PAIRS = {
         "pusht_expert_train.h5", "pusht_antigoal_test.h5", "PushT", "Push-T Antigoal", PUSHT_FEATURES
     ),
     "avoidpeg": PairSpec(
-        "insert_peg_weak_expert_train.h5",
+        "manipulator_insert_peg_weak_expert_train.h5",
         "avoid_peg_test.h5",
         "Insert-Peg",
         "Avoid-Peg",
         INSERT_PEG_FEATURES,
     ),
     "extractpeg": PairSpec(
-        "insert_peg_weak_expert_train.h5",
+        "manipulator_insert_peg_weak_expert_train.h5",
         "extract_peg_test.h5",
         "Insert-Peg",
         "Extract-Peg",

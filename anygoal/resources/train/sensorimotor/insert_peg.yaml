@@ -3,7 +3,7 @@ img_size: 224
 patch_size: 14
 encoder_scale: tiny
 num_workers: 24
-subdir: 20260910_insert_peg_weak_expert_inverse_lambda_1_seed0
+subdir: 20260910_manipulator_insert_peg_weak_expert_inverse_lambda_1_seed0
 
 artifacts:
   save_resolved_config: true
@@ -41,7 +41,7 @@ wandb:
     project: sensorimotor-world-model
     resume: never
     log_model: false
-    name: train_20260910_insert_peg_weak_expert_inverse_lambda_1_seed0
+    name: train_20260910_manipulator_insert_peg_weak_expert_inverse_lambda_1_seed0
 
 validation_monitoring:
   enabled: false
@@ -82,7 +82,7 @@ data:
   dataset:
     frameskip: 5
     num_steps: 2
-    name: insert_peg_weak_expert_train
+    name: manipulator_insert_peg_weak_expert_train
     cache_dir: ${oc.env:EXTERNAL_DATA_ROOT,'~/.stable_worldmodel'}
     keys_to_load:
       - pixels
@@ -95,7 +95,7 @@ data:
       proprio: proprio
 
 final_training:
-  environment: DMControl-Insert-Peg
+  environment: DMControl-Manipulator-Insert-Peg
   method: inverse / ours
   seed: 0
 

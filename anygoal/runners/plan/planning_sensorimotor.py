@@ -28,6 +28,7 @@ from anygoal.envs.insert_peg.env import (
     add_insert_peg_evaluation_metrics,
 )
 from anygoal._planning_artifacts import PlanningArtifactRecorder
+from anygoal.paths import resolve_path
 from anygoal.sources import source_path
 
 
@@ -202,9 +203,9 @@ def resolve_run_directory(cfg: DictConfig, seed: int) -> Path:
 
 def required_paths(cfg: DictConfig, seed: int) -> list[Path]:
     run_directory = resolve_run_directory(cfg, seed)
-    train_config_path = Path(
+    train_config_path = resolve_path(
         cfg.model.get("config", run_directory / "config.yaml")
-    ).expanduser()
+    )
     checkpoint_path = Path(
         cfg.model.get("checkpoint", run_directory / "checkpoints" / "last.ckpt")
     ).expanduser()
@@ -267,7 +268,7 @@ def evaluate(cfg: DictConfig, seed: int) -> Path:
         _planning_source(cfg),
         device,
         train_config_path=(
-            Path(cfg.model.config).expanduser() if "config" in cfg.model else None
+            resolve_path(cfg.model.config) if "config" in cfg.model else None
         ),
         checkpoint_path=(
             Path(cfg.model.checkpoint).expanduser()

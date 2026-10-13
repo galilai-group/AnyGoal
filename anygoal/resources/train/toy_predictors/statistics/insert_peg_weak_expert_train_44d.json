@@ -1,5 +1,5 @@
 {
-  "dataset": "insert_peg_weak_expert_train.h5",
+  "dataset": "manipulator_insert_peg_weak_expert_train.h5",
   "representation": [
     "proprio_arm_pos_0",
     "proprio_arm_pos_1",

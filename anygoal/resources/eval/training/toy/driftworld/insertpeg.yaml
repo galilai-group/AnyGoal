@@ -1,0 +1,36 @@
+seed: 1
+history_size: 3
+data:
+  name: insert_peg_essential
+  frameskip: 5
+  state_dim: 33
+  action_dim: 5
+  normalization_path: toy_predictors/statistics/insert_peg_weak_expert_train_33d.json
+  adapter:
+    _target_: anygoal.datasets.InsertPegStateAdapter
+    include_velocities: false
+model:
+  name: drift_state_predictor
+  _target_: anygoal.wm.toy_predictors.DriftWorldStatePredictor
+  state_dim: 33
+  action_dim: 5
+  action_frameskip: 5
+  history_size: 3
+  hidden_dim: 256
+  num_res_blocks: 4
+  time_embed_dim: null
+  action_embed_dim: 128
+  dropout: 0.0
+  activation: silu
+  norm: layernorm
+  temperatures: [0.02, 0.05, 0.2]
+  n_neg: 16
+  decay: 0.999
+  rollout_seed: 1
+  num_rollout_samples: 1
+loader:
+  batch_size: 128
+optimizer:
+  lr: 0.0001
+train:
+  max_steps: 500000

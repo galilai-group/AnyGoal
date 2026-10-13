@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 
 os.environ["MUJOCO_GL"] = "egl"
@@ -38,6 +39,7 @@ from anygoal.envs.cube_hop.env import (  # noqa: E402
 from anygoal.envs.insert_peg.env import (  # noqa: E402
     add_insert_peg_evaluation_metrics,
 )
+from anygoal.resources import resource_path  # noqa: E402
 from anygoal.wm.toy_predictors import (  # noqa: E402
     FixedMinMaxScaler,
     FixedStandardScaler,
@@ -91,7 +93,12 @@ def load_predictor(cfg: DictConfig):
     model = model.to(cfg.device).eval().requires_grad_(False)
 
     adapter = hydra.utils.instantiate(training_config.data.adapter)
-    normalization = training_config.normalization
+    normalization = training_config.get("normalization")
+    if normalization is None:
+        normalization_path = resource_path(
+            "train", *Path(str(training_config.data.normalization_path)).parts
+        )
+        normalization = OmegaConf.create(json.loads(normalization_path.read_text()))
     if normalization.state.get("type", "zscore") == "minmax":
         state_processor = FixedMinMaxScaler(
             normalization.state.min,

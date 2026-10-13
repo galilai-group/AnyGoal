@@ -10,7 +10,16 @@ from stable_worldmodel.data.utils import get_cache_dir
 
 def resolve_path(value: str | Path, *, base: str | Path | None = None) -> Path:
     """Expand a path, resolving relative values against a caller-selected base."""
-    path = Path(str(value)).expanduser()
+    text = str(value)
+    resource_prefix = "resource:"
+    if text.startswith(resource_prefix):
+        from anygoal.resources import resource_path
+
+        relative = text.removeprefix(resource_prefix).lstrip("/")
+        if not relative:
+            raise ValueError("resource path must name a packaged file")
+        return resource_path(*Path(relative).parts)
+    path = Path(text).expanduser()
     root = Path.cwd() if base is None else Path(base).expanduser()
     return path if path.is_absolute() else root / path
 

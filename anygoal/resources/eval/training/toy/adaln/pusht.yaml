@@ -1,0 +1,32 @@
+seed: 3072
+history_size: 3
+data:
+  name: pusht
+  frameskip: 5
+  state_dim: 10
+  action_dim: 2
+  normalization_path: toy_predictors/statistics/pusht_expert_train_10d.json
+  adapter:
+    _target_: anygoal.datasets.PushTTrueStateAdapter
+    goal_position: [256.0, 256.0]
+    goal_angle: 0.7853981633974483
+model:
+  name: adaln
+  _target_: anygoal.wm.toy_predictors.AdaLNActionPredictor
+  state_dim: 10
+  action_dim: 2
+  action_frameskip: 5
+  history_size: 3
+  hidden_dim: 192
+  depth: 6
+  heads: 16
+  dim_head: 64
+  mlp_dim: 2048
+  dropout: 0.1
+  emb_dropout: 0.0
+loader:
+  batch_size: 256
+optimizer:
+  lr: 0.0003
+trainer:
+  max_epochs: 100

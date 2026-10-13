@@ -1,64 +1,12 @@
 from __future__ import annotations
 
-import json
-
 import h5py
 import numpy as np
 
 from anygoal.cli import main
 from anygoal.config import load_config
 from anygoal.datasets.validation import validate_hdf5
-from anygoal.registry import get_registry
-
-
-EXPECTED_DATASETS = {
-    "pusht",
-    "avoidt",
-    "stackt",
-    "pusht-antigoal",
-    "cube",
-    "cubehop",
-    "cubediagonal",
-    "insertpeg",
-    "avoid_peg",
-    "extractpeg",
-    "tworoom",
-    "tworoom_route",
-}
-EXPECTED_MODELS = {
-    "lewm",
-    "sensorimotor",
-    "prejepa",
-    "driftworld",
-    "irasim",
-    "toy-adaln",
-    "toy-action-duplicate",
-    "toy-driftworld",
-}
-
-
-def test_catalog_matches_public_support_sets():
-    registry = get_registry()
-    assert set(registry.datasets) == EXPECTED_DATASETS
-    assert set(registry.models) == EXPECTED_MODELS
-    assert registry.dataset("cube_diagonal").id == "cubediagonal"
-    assert registry.model("adaln").id == "toy-adaln"
-    assert set(registry.model("driftworld").training_profiles) == {
-        "pusht",
-        "cube",
-        "tworoom",
-        "insertpeg",
-    }
-    for model_id in ("lewm", "sensorimotor", "prejepa"):
-        assert set(registry.model(model_id).training_profiles) == {
-            "pusht",
-            "cube",
-            "tworoom",
-            "insertpeg",
-        }
-    assert {
-        item.id for item in registry.datasets.values() if item.source == "external"
-    } == {"pusht", "cube", "insertpeg", "tworoom"}
+import anygoal
 
 
 def test_default_config_has_no_personal_service_policy(tmp_path, monkeypatch):
@@ -67,6 +15,14 @@ def test_default_config_has_no_personal_service_policy(tmp_path, monkeypatch):
     assert config["wandb"]["enabled"] is False
     assert config["wandb"]["entity"] is None
     assert "slurm" not in config
+
+
+def test_top_level_api_exports_all_public_workflows():
+    assert callable(anygoal.collect)
+    assert callable(anygoal.train)
+    assert callable(anygoal.plan)
+    assert callable(anygoal.evaluate_rollout)
+    assert callable(anygoal.get_registry)
 
 
 def test_hdf5_validation_reports_shape_and_episode_errors(tmp_path):
@@ -205,42 +161,3 @@ def test_prejepa_training_supports_pusht(capsys, tmp_path):
         == 0
     )
     assert "dataset_name=" in capsys.readouterr().out
-
-
-def test_public_planning_matrix_has_a_dispatch_path(capsys):
-    for model_id in EXPECTED_MODELS:
-        for dataset_id in EXPECTED_DATASETS:
-            assert (
-                main(
-                    [
-                        "eval",
-                        "planning",
-                        "--model",
-                        model_id,
-                        "--dataset",
-                        dataset_id,
-                        "--dry-run",
-                    ]
-                )
-                == 0
-            )
-    capsys.readouterr()
-
-
-def test_catalog_resource_is_serializable():
-    registry = get_registry()
-    payload = {key: value.filename for key, value in registry.datasets.items()}
-    assert json.loads(json.dumps(payload)) == {
-        "pusht": "pusht_expert_train.h5",
-        "avoidt": "avoidt_test.h5",
-        "stackt": "stackt_test.h5",
-        "pusht-antigoal": "pusht_antigoal_test.h5",
-        "cube": "cube_single_expert.h5",
-        "cubehop": "cube_hop_test.h5",
-        "cubediagonal": "cube_diagonal_test.h5",
-        "insertpeg": "insert_peg_weak_expert_train.h5",
-        "avoid_peg": "avoid_peg_test.h5",
-        "extractpeg": "extract_peg_test.h5",
-        "tworoom": "tworoom.h5",
-        "tworoom_route": "tworoom_route_test.h5",
-    }

@@ -26,7 +26,7 @@ opt:
 
 data:
   batch_size: 2
-  dataset_name: insert_peg_weak_expert_train
+  dataset_name: manipulator_insert_peg_weak_expert_train
   dataset_root: ${oc.env:DRIFTWORLD_DATA_ROOT,'~/.stable_worldmodel'}
   frameskip: 5
   action_mode: relative

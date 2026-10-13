@@ -1,0 +1,1 @@
+"""Fast public contract tests."""

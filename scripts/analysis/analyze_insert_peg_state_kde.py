@@ -18,7 +18,9 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
 
-DEFAULT_DATASET = Path.home() / ".stable_worldmodel/datasets/insert_peg_weak_expert_train.h5"
+DEFAULT_DATASET = (
+    Path.home() / ".stable_worldmodel/datasets/manipulator_insert_peg_weak_expert_train.h5"
+)
 DEFAULT_OUTPUT = Path("outputs/analysis/insert_peg_state_kde")
 KDE_REFERENCE_QUANTILE = 0.01
 GREY = "#d0d0d0"
