@@ -33,6 +33,17 @@ def _python_command(target: str) -> list[str]:
     return [sys.executable, "-m", target]
 
 
+def _hydra_override(config: Path, key: str, value: str) -> str:
+    """Use Hydra's append syntax only when a key is absent from the config."""
+    content = yaml.safe_load(config.read_text()) or {}
+    current = content
+    for part in key.split("."):
+        if not isinstance(current, dict) or part not in current:
+            return f"+{key}={value}"
+        current = current[part]
+    return f"{key}={value}"
+
+
 def _execute(command: Sequence[str], *, dry_run: bool, cwd: Path | None = None) -> int:
     printable = shlex.join(str(part) for part in command)
     if dry_run:
@@ -121,6 +132,12 @@ def _run_eval(args: argparse.Namespace) -> int:
         raise ValueError(
             f"{model.id} does not declare support for {dataset.family} datasets."
         )
+    if args.download:
+        from anygoal.artifacts import download_checkpoint, download_dataset
+
+        download_dataset(dataset)
+        if args.checkpoint is None:
+            args.checkpoint = download_checkpoint(model, dataset)
     extra = _clean_remainder(args.arguments)
     if args.eval_kind == "rollout":
         command = [
@@ -167,8 +184,11 @@ def _run_eval(args: argparse.Namespace) -> int:
             extra.append(f"eval.dataset_name={Path(dataset.filename).stem}")
         if args.checkpoint:
             extra.append(
-                f"{model.planning_checkpoint_key}="
-                f"{args.checkpoint.expanduser().resolve()}"
+                _hydra_override(
+                    config,
+                    model.planning_checkpoint_key,
+                    str(args.checkpoint.expanduser().resolve()),
+                )
             )
     command.extend(extra)
     return _execute(command, dry_run=args.dry_run)
@@ -224,6 +244,31 @@ def _run_models(args: argparse.Namespace) -> int:
             f"{status.source.id:14} {status.state:10} "
             f"revision={revision} path={status.path}"
         )
+    return 0
+
+
+def _run_artifacts(args: argparse.Namespace) -> int:
+    from anygoal.artifacts import (
+        download_all,
+        download_pair,
+    )
+
+    if args.all:
+        if args.model_id or args.dataset_id:
+            raise ValueError("--all cannot be combined with --model or --dataset.")
+        if not args.datasets and not args.checkpoints:
+            raise ValueError("--all requires --datasets and/or --checkpoints.")
+        downloaded = download_all(
+            datasets=args.datasets, checkpoints=args.checkpoints
+        )
+    else:
+        if args.datasets or args.checkpoints:
+            raise ValueError("--datasets and --checkpoints require --all.")
+        if not args.model_id or not args.dataset_id:
+            raise ValueError("Specify both --model and --dataset, or use --all.")
+        downloaded = download_pair(args.model_id, args.dataset_id)
+    for path in downloaded:
+        print(path)
     return 0
 
 
@@ -286,6 +331,22 @@ def _parser() -> argparse.ArgumentParser:
     install_target.add_argument("--all", action="store_true")
     models_install.set_defaults(handler=_run_models)
 
+    artifacts_parser = subparsers.add_parser(
+        "artifacts", help="Download published datasets and checkpoints."
+    )
+    artifacts_subparsers = artifacts_parser.add_subparsers(
+        dest="artifacts_command", required=True
+    )
+    artifacts_download = artifacts_subparsers.add_parser(
+        "download", help="Download one evaluation pair or all published artifacts."
+    )
+    artifacts_download.add_argument("--model", dest="model_id")
+    artifacts_download.add_argument("--dataset", dest="dataset_id")
+    artifacts_download.add_argument("--datasets", action="store_true")
+    artifacts_download.add_argument("--checkpoints", action="store_true")
+    artifacts_download.add_argument("--all", action="store_true")
+    artifacts_download.set_defaults(handler=_run_artifacts)
+
     config_parser = subparsers.add_parser(
         "config", help="Inspect merged configuration."
     )
@@ -342,6 +403,11 @@ def _parser() -> argparse.ArgumentParser:
         child.add_argument("--dataset", dest="dataset_id", required=True)
         child.add_argument("--checkpoint", type=Path)
         child.add_argument("--model-config", type=Path)
+        child.add_argument(
+            "--download",
+            action="store_true",
+            help="Download the missing dataset and checkpoint from Hugging Face.",
+        )
         child.add_argument("--seed", type=int, default=0)
         child.add_argument("--dry-run", action="store_true")
         child.add_argument("arguments", nargs="*", help="Evaluator options after --.")

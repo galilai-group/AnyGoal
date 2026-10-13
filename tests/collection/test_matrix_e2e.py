@@ -14,13 +14,15 @@ pytestmark = pytest.mark.matrix_e2e
 def _collection_options(dataset_id, output, data_root):
     base = {"output": output, "overwrite": True}
     if dataset_id == "avoidt":
-        return {**base, "num_episodes": 4, "num_parallel": 1}
+        # Keep the original collector's eight-way initial-state diversity while
+        # reducing each corner from 100 accepted episodes to eight.
+        return {**base, "num_episodes": 32, "num_parallel": 8}
     if dataset_id == "stackt":
         return {
             **base,
             "num_episodes": 1,
             "num_parallel": 1,
-            "minimum_angle_support": 0.0,
+            "minimum_angle_support": 0.95,
             "reference": data_path("pusht", data_root),
         }
     if dataset_id == "pusht-antigoal":
@@ -34,7 +36,7 @@ def _collection_options(dataset_id, output, data_root):
     if dataset_id == "cubehop":
         return {
             **base,
-            "num_episodes": 1,
+            "num_episodes": 2,
             "num_parallel": 1,
             "reference": data_path("cube", data_root),
         }
@@ -51,7 +53,7 @@ def _collection_options(dataset_id, output, data_root):
     if dataset_id in {"avoid_peg", "extractpeg"}:
         return {
             **base,
-            "num_episodes": 1,
+            "num_episodes": 2,
             "reference": data_path("insertpeg", data_root),
         }
     if dataset_id == "tworoom_route":

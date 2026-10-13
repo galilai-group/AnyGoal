@@ -182,8 +182,25 @@ def _loader_config(config: DictConfig) -> dict:
     return loader
 
 
-def _load_dataset(data_config: DictConfig, num_steps: int):
+def _load_dataset(
+    data_config: DictConfig,
+    num_steps: int,
+    *,
+    relative_to: Path | None = None,
+):
     dataset_name = Path(str(data_config.dataset_name)).expanduser()
+    if (
+        relative_to is not None
+        and not dataset_name.is_absolute()
+        and dataset_name.suffix in {".h5", ".hdf5"}
+    ):
+        sibling = relative_to / dataset_name
+        canonical = relative_to / "datasets" / dataset_name
+        dataset_name = (
+            canonical
+            if not sibling.is_file() and canonical.is_file()
+            else sibling
+        )
     location = (
         {"path": dataset_name}
         if dataset_name.is_absolute() or dataset_name.suffix in {".h5", ".hdf5"}
@@ -326,6 +343,10 @@ def make_data(cfg: DictConfig):
     adapter = hydra.utils.instantiate(cfg.data.adapter)
     _validate_adapter_dimensions(adapter, cfg.data.state_dim, cfg.data.action_dim)
     dataset = _load_dataset(cfg.data, num_steps)
+    primary_dataset_name = Path(str(cfg.data.dataset_name)).expanduser()
+    validation_root = (
+        primary_dataset_name.parent if primary_dataset_name.is_absolute() else None
+    )
 
     normalizers, statistics = _load_normalization_statistics(
         cfg.data.normalization_path,
@@ -381,7 +402,11 @@ def make_data(cfg: DictConfig):
             cfg.data.state_dim,
             cfg.data.action_dim,
         )
-        validation_dataset = _load_dataset(validation_config, num_steps)
+        validation_dataset = _load_dataset(
+            validation_config,
+            num_steps,
+            relative_to=validation_root,
+        )
         validation_dataset.transform = _make_transform(
             validation_adapter, normalizers
         )

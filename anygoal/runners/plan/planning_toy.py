@@ -58,11 +58,20 @@ def get_episodes_length(dataset, episodes) -> np.ndarray:
 
 
 def get_dataset(cfg: DictConfig):
-    cache_directory = Path(cfg.cache_dir or swm.data.utils.get_cache_dir())
+    cache_directory = Path(
+        cfg.cache_dir or swm.data.utils.get_cache_dir()
+    ).expanduser()
+    dataset_name = Path(str(cfg.eval.dataset_name)).expanduser()
+    dataset_path = (
+        dataset_name
+        if dataset_name.is_absolute()
+        else cache_directory / "datasets" / dataset_name
+    )
+    if not dataset_path.suffix:
+        dataset_path = dataset_path.with_suffix(".h5")
     return swm.data.HDF5Dataset(
-        cfg.eval.dataset_name,
+        path=dataset_path,
         keys_to_cache=cfg.dataset.keys_to_cache,
-        cache_dir=cache_directory,
     )
 
 

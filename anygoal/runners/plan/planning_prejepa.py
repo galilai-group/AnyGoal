@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib
 import json
 import math
+from collections.abc import Mapping
 from pathlib import Path
 
 import hydra
@@ -12,6 +13,8 @@ import numpy as np
 import stable_worldmodel as swm
 import torch
 from omegaconf import DictConfig, OmegaConf
+
+from anygoal.paths import resolve_path
 
 from .planning import evaluate
 
@@ -33,16 +36,26 @@ def load_prejepa_cost_model(cfg: DictConfig, checkpoint_root: str | Path):
     explicit_checkpoint = cfg.get("model", {}).get("checkpoint")
     if explicit_checkpoint:
         checkpoint_path = Path(str(explicit_checkpoint)).expanduser()
-        config_path = Path(str(cfg.model.config)).expanduser()
-        if not checkpoint_path.is_file() or not config_path.is_file():
-            raise FileNotFoundError(
-                f"Missing PreJEPA checkpoint or config: {checkpoint_path}, {config_path}"
-            )
-        model = hydra.utils.instantiate(OmegaConf.load(config_path))
-        model.load_state_dict(
-            torch.load(checkpoint_path, map_location="cpu", weights_only=True),
-            strict=True,
+        if not checkpoint_path.is_file():
+            raise FileNotFoundError(f"Missing PreJEPA checkpoint: {checkpoint_path}")
+        payload = torch.load(
+            checkpoint_path, map_location="cpu", weights_only=False
         )
+        if isinstance(payload, Mapping):
+            configured_path = cfg.model.get("config")
+            if not configured_path:
+                raise ValueError(
+                    "A PreJEPA state-dict checkpoint requires model.config."
+                )
+            config_path = resolve_path(str(configured_path))
+            if not config_path.is_file():
+                raise FileNotFoundError(
+                    f"Missing PreJEPA model config: {config_path}"
+                )
+            model = hydra.utils.instantiate(OmegaConf.load(config_path))
+            model.load_state_dict(payload, strict=True)
+        else:
+            model = payload
         model_label = str(checkpoint_path)
     else:
         model = swm.policy.AutoCostModel(cfg.policy, cache_dir=checkpoint_root)

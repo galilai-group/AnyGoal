@@ -32,12 +32,17 @@ def remap_legacy_vit_key(key: str) -> str:
     return key
 
 
-def build_lewm(cfg: DictConfig):
+def _source_root(cfg: DictConfig) -> Path:
     source_root = Path(cfg.model_source_root).expanduser().resolve()
     if not (source_root / "jepa.py").is_file():
         source_root = source_path("lewm")
     if not (source_root / "jepa.py").is_file():
         raise FileNotFoundError(f"LeWM source not found: {source_root}")
+    return source_root
+
+
+def build_lewm(cfg: DictConfig):
+    source_root = _source_root(cfg)
     sys.path.insert(0, str(source_root))
     try:
         from jepa import JEPA
@@ -96,9 +101,7 @@ def load_lewm_cost_model(cfg: DictConfig, checkpoint_root: str | Path):
     )
     if not checkpoint_path.is_file():
         raise FileNotFoundError(f"LeWM checkpoint not found: {checkpoint_path}")
-    source_root = Path(cfg.model_source_root).expanduser().resolve()
-    if not (source_root / "jepa.py").is_file():
-        raise FileNotFoundError(f"LeWM source not found: {source_root}")
+    source_root = _source_root(cfg)
     sys.path.insert(0, str(source_root))
     try:
         payload = torch.load(

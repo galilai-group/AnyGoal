@@ -1,0 +1,32 @@
+{
+  "_target_": "stable_worldmodel.wm.PreJEPA",
+  "history_size": 3,
+  "num_pred": 1,
+  "interpolate_pos_encoding": true,
+  "encoder": {
+    "_target_": "stable_worldmodel.wm.prejepa.module.create_backbone",
+    "name": "dinov2_small"
+  },
+  "predictor": {
+    "_target_": "stable_worldmodel.wm.prejepa.module.CausalPredictor",
+    "num_patches": 256,
+    "num_frames": 3,
+    "dim": 394,
+    "depth": 6,
+    "heads": 16,
+    "mlp_dim": 2048,
+    "dim_head": 64,
+    "dropout": 0.1,
+    "emb_dropout": 0.0
+  },
+  "extra_encoders": {
+    "_target_": "torch.nn.ModuleDict",
+    "modules": {
+      "action": {
+        "_target_": "stable_worldmodel.wm.prejepa.module.Embedder",
+        "in_chans": 25,
+        "emb_dim": 10
+      }
+    }
+  }
+}

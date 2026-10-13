@@ -9,6 +9,7 @@ artifacts:
   log_lightning_hparams: false
   use_external_callbacks: false
   save_model_object: false
+  embedding_subset_size: 4096
 trainer:
   max_epochs: 10
   devices: auto

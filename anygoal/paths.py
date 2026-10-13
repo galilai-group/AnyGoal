@@ -32,9 +32,10 @@ def data_root() -> Path:
 
 
 def checkpoint_root() -> Path:
-    return Path(
-        os.environ.get("ANYGOAL_CHECKPOINT_ROOT", "~/.cache/anygoal/checkpoints")
-    ).expanduser()
+    override = os.environ.get("ANYGOAL_CHECKPOINT_ROOT")
+    if override:
+        return Path(override).expanduser()
+    return get_cache_dir(sub_folder="anygoal")
 
 
 def cache_root() -> Path:

@@ -59,6 +59,7 @@ EVALUATION_EE_POSITION_TOLERANCE = 0.04
 EVALUATION_EE_YAW_TOLERANCE = 0.10
 EVALUATION_CUBE_POSITION_TOLERANCE = 0.04
 
+
 def wrapped_angle_error(target: float, current: float) -> float:
     """Return the signed shortest yaw change from ``current`` to ``target``."""
     return float((target - current + np.pi) % (2.0 * np.pi) - np.pi)
@@ -86,9 +87,7 @@ class CubeHopEnv(CubeEnv):
     def __init__(
         self,
         side: str = "right",
-        evaluation_ee_position_tolerance: float = (
-            EVALUATION_EE_POSITION_TOLERANCE
-        ),
+        evaluation_ee_position_tolerance: float = (EVALUATION_EE_POSITION_TOLERANCE),
         evaluation_ee_yaw_tolerance: float = EVALUATION_EE_YAW_TOLERANCE,
         evaluation_cube_position_tolerance: float = (
             EVALUATION_CUBE_POSITION_TOLERANCE
@@ -282,9 +281,7 @@ class CubeHopEnv(CubeEnv):
                 wrapped_angle_error(float(self._evaluation_goal["ee_yaw"]), ee_yaw)
             ),
             "cube_position": float(
-                np.linalg.norm(
-                    cube_position - self._evaluation_goal["cube_position"]
-                )
+                np.linalg.norm(cube_position - self._evaluation_goal["cube_position"])
             ),
         }
         current_success = cube_hop_success_criterion(
@@ -318,15 +315,19 @@ def make_cube_hop_env(**kwargs) -> CubeHopEnv:
 
 def _install_cube_evaluation(env: CubeEnv) -> None:
     """Install full-budget Cube metrics on a StableWM Cube environment."""
-    if isinstance(env, CubeHopEnv) or getattr(
-        env, "_cube_evaluation_installed", False
-    ):
+    if isinstance(env, CubeHopEnv) or getattr(env, "_cube_evaluation_installed", False):
         return
-    env._evaluation_tolerances = {
+    default_tolerances = {
         "ee_position": EVALUATION_EE_POSITION_TOLERANCE,
         "ee_yaw": EVALUATION_EE_YAW_TOLERANCE,
         "cube_position": EVALUATION_CUBE_POSITION_TOLERANCE,
     }
+    configured_tolerances = getattr(env, "_evaluation_tolerances", default_tolerances)
+    env._evaluation_tolerances = {
+        name: float(configured_tolerances[name]) for name in default_tolerances
+    }
+    if any(value <= 0.0 for value in env._evaluation_tolerances.values()):
+        raise ValueError("Cube evaluation tolerances must be positive.")
     env._evaluation_goal = None
     env._criterion_3_success = False
     env._original_cube_success = False
@@ -359,9 +360,7 @@ def prepare_cube_evaluation(world, callables: list[dict] | None):
         return prepared
     for env in base_envs:
         _install_cube_evaluation(env)
-    if any(
-        spec.get("method") == "set_evaluation_goal" for spec in prepared
-    ):
+    if any(spec.get("method") == "set_evaluation_goal" for spec in prepared):
         return prepared
     prepared.append(
         {

@@ -106,6 +106,13 @@ def configure_upstream_paths(cfg: DictConfig, run_directory: Path) -> None:
 
 
 def validate_config(cfg: DictConfig) -> Path:
+    source = str(cfg.model.get("source", "pusht"))
+    if source == "robomimic":
+        from .train_driftworld_cube import validate_config as validate_robomimic
+
+        return validate_robomimic(cfg)
+    if source != "pusht":
+        raise ValueError(f"Unsupported DriftWorld training source: {source!r}.")
     if int(cfg.data.frameskip) < 1:
         raise ValueError("data.frameskip must be positive.")
     expected_horizon = int(cfg.model.num_history_frames) + int(
@@ -137,12 +144,12 @@ def validate_config(cfg: DictConfig) -> Path:
             )
     dataset_name = Path(str(cfg.data.dataset_name)).expanduser()
     if dataset_name.is_absolute():
-        dataset_path = dataset_name if dataset_name.suffix else dataset_name.with_suffix(".h5")
+        dataset_path = (
+            dataset_name if dataset_name.suffix else dataset_name.with_suffix(".h5")
+        )
     else:
         dataset_path = (
-            Path(cfg.data.dataset_root).expanduser()
-            / "datasets"
-            / f"{dataset_name}.h5"
+            Path(cfg.data.dataset_root).expanduser() / "datasets" / f"{dataset_name}.h5"
         )
     if not dataset_path.is_file():
         raise FileNotFoundError(f"StableWM H5 file not found: {dataset_path}")
@@ -161,7 +168,9 @@ def load_upstream_train_module():
     sys.modules["data.pushT_dataloader"] = loader_module
     spec = importlib.util.spec_from_file_location(module_name, source_root / "train.py")
     if spec is None or spec.loader is None:
-        raise ImportError(f"Could not load DriftWorld training loop from {source_root}.")
+        raise ImportError(
+            f"Could not load DriftWorld training loop from {source_root}."
+        )
     module = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = module
     sys.path.insert(0, str(source_root))
@@ -268,7 +277,9 @@ class TrainingTelemetry:
                 rows = []
                 for sample_index in range(sample_count):
                     rows.append(torch.cat(list(target_pixels[sample_index]), dim=-1))
-                    rows.append(torch.cat(list(prediction_pixels[sample_index]), dim=-1))
+                    rows.append(
+                        torch.cat(list(prediction_pixels[sample_index]), dim=-1)
+                    )
                 panel = torch.cat(rows, dim=-2).permute(1, 2, 0).float().cpu().numpy()
                 metrics["visualization/ground_truth_vs_prediction"] = self.wandb.Image(
                     panel,
@@ -368,7 +379,9 @@ class CheckpointingTorchProxy:
 
     def save(self, obj, path, *args, **kwargs):
         result = self._torch.save(obj, path, *args, **kwargs)
-        saved_path = Path(path).resolve() if isinstance(path, (str, os.PathLike)) else None
+        saved_path = (
+            Path(path).resolve() if isinstance(path, (str, os.PathLike)) else None
+        )
         step = obj.get("step") if isinstance(obj, dict) else None
         if (
             saved_path == self._latest
@@ -399,6 +412,11 @@ class CheckpointingTorchProxy:
 
 
 def run_training(cfg: DictConfig) -> None:
+    if str(cfg.model.get("source", "pusht")) == "robomimic":
+        from .train_driftworld_cube import run_training as run_robomimic_training
+
+        run_robomimic_training(cfg)
+        return
     upstream_train = load_upstream_train_module()
     original_loader = upstream_train.get_pushT_loader
     original_create_model = upstream_train.create_model
@@ -425,9 +443,7 @@ def run_training(cfg: DictConfig) -> None:
         return telemetry.wrap_model(denoiser)
 
     def create_logged_loader(inner_cfg, rank=0, world_size=1):
-        loader = get_driftworld_hdf5_loader(
-            inner_cfg, rank=rank, world_size=world_size
-        )
+        loader = get_driftworld_hdf5_loader(inner_cfg, rank=rank, world_size=world_size)
         telemetry.register_loader(loader)
         return loader
 
@@ -492,12 +508,21 @@ def main() -> None:
         logging.info("Run directory: %s", run_directory)
 
     if args.preflight:
-        loader = get_driftworld_hdf5_loader(cfg, rank=rank, world_size=world_size)
+        if str(cfg.model.get("source", "pusht")) == "robomimic":
+            from anygoal.wm.driftworld import get_driftworld_cube_hdf5_loader
+
+            loader = get_driftworld_cube_hdf5_loader(
+                cfg, rank=rank, world_size=world_size
+            )
+        else:
+            loader = get_driftworld_hdf5_loader(cfg, rank=rank, world_size=world_size)
         batch = next(iter(loader))
         if rank == 0:
+            images = batch.get("image", batch.get("obs", {}).get("agentview_image"))
+            actions = batch.get("action", batch.get("actions"))
             print(
-                f"Preflight OK: image={tuple(batch['image'].shape)} "
-                f"action={tuple(batch['action'].shape)} run={run_directory}"
+                f"Preflight OK: image={tuple(images.shape)} "
+                f"action={tuple(actions.shape)} run={run_directory}"
             )
         if world_size > 1 and dist.is_initialized():
             dist.destroy_process_group()

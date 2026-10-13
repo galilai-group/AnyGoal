@@ -12,6 +12,7 @@ from anygoal.datasets.cube.support import (
     _balanced_batch_sides,
 )
 from anygoal.envs.cube_hop.env import (
+    _install_cube_evaluation,
     CUBE_HOP_SIDES,
     GRIPPER_TARGET_HIGH,
     GRIPPER_TARGET_LOW,
@@ -105,6 +106,28 @@ def test_cube_hop_criterion_3_requires_all_three_errors_within_tolerance():
         cube_position_error=0.03,
         **tolerances,
     )
+
+
+def test_cube_evaluation_install_preserves_environment_tolerances():
+    class FakeCube:
+        _cube_evaluation_installed = False
+        _evaluation_tolerances = {
+            "ee_position": 0.01,
+            "ee_yaw": 0.02,
+            "cube_position": 0.03,
+        }
+
+        def post_step(self):
+            pass
+
+    env = FakeCube()
+    _install_cube_evaluation(env)
+
+    assert env._evaluation_tolerances == {
+        "ee_position": 0.01,
+        "ee_yaw": 0.02,
+        "cube_position": 0.03,
+    }
 
 
 def test_action_support_projects_to_calibrated_neighborhood(tmp_path):

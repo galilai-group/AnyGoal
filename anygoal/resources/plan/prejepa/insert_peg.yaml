@@ -21,7 +21,7 @@ policy: insert_peg/prejepa_rgb_action
 preflight: false
 model:
   checkpoint: ~/.stable_worldmodel/anygoal/prejepa_insertpeg.pt
-  config: ~/.cache/anygoal/checkpoints/20260911_insert_peg_prejepa_rgb_action_fs5/checkpoints/20260911_insert_peg_prejepa_rgb_action_fs5_3173369/config.json
+  config: resource:eval/training/prejepa/insert_peg.json
 
 plan_config:
   horizon: 5

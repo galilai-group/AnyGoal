@@ -473,9 +473,19 @@ def _select_checkpoint(model_id: str, candidates: set[Path]) -> Path:
     return max(pool, key=lambda path: (path.stat().st_mtime_ns, path.name))
 
 
-def _find_saved_config(checkpoint: Path, fallback: Path | None) -> Path:
+def _find_saved_config(
+    checkpoint: Path,
+    fallback: Path | None,
+    *,
+    prefer_model_config: bool = False,
+) -> Path:
+    names = (
+        ("config.json", "config.yaml", "config.yml")
+        if prefer_model_config
+        else ("config.yaml", "config.yml", "config.json")
+    )
     for directory in (checkpoint.parent, *list(checkpoint.parents)[1:5]):
-        for name in ("config.yaml", "config.yml", "config.json"):
+        for name in names:
             candidate = directory / name
             if candidate.is_file():
                 return candidate.resolve()
@@ -709,7 +719,11 @@ def train(
         path for path, fingerprint in after.items() if before.get(path) != fingerprint
     }
     checkpoint = _select_checkpoint(plan.model.id, candidates)
-    saved_config = _find_saved_config(checkpoint, plan.config)
+    saved_config = _find_saved_config(
+        checkpoint,
+        plan.config,
+        prefer_model_config=plan.model.id in {"lewm", "prejepa"},
+    )
     loaded_model = load_trained_model(
         plan.model.id,
         checkpoint,

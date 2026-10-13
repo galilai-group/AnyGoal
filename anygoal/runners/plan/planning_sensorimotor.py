@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import os
 import sys
@@ -45,13 +46,26 @@ def load_model_classes(source_root: Path):
     source_root = source_root.resolve()
     if not (source_root / "jepa.py").is_file():
         raise FileNotFoundError(f"Sensorimotor source not found: {source_root}")
+    previous_modules = {
+        name: sys.modules.pop(name, None) for name in ("jepa", "module")
+    }
     sys.path.insert(0, str(source_root))
     try:
-        from jepa import JEPA
-        from module import ARPredictor, Embedder, InverseModel, MLP
+        jepa_module = importlib.import_module("jepa")
+        model_module = importlib.import_module("module")
     finally:
         sys.path.pop(0)
-    return JEPA, ARPredictor, Embedder, InverseModel, MLP
+        for name in ("jepa", "module"):
+            sys.modules.pop(name, None)
+            if previous_modules[name] is not None:
+                sys.modules[name] = previous_modules[name]
+    return (
+        jepa_module.JEPA,
+        model_module.ARPredictor,
+        model_module.Embedder,
+        model_module.InverseModel,
+        model_module.MLP,
+    )
 
 
 def build_model(train_cfg: DictConfig, source_root: Path):
@@ -201,6 +215,13 @@ def resolve_run_directory(cfg: DictConfig, seed: int) -> Path:
     return Path(cfg.model.checkpoint_root).expanduser() / run_name
 
 
+def dataset_path(cfg: DictConfig) -> Path:
+    dataset_name = Path(str(cfg.eval.dataset_name)).expanduser()
+    if dataset_name.is_absolute():
+        return dataset_name if dataset_name.suffix else dataset_name.with_suffix(".h5")
+    return Path(cfg.dataset.root).expanduser() / "datasets" / f"{dataset_name}.h5"
+
+
 def required_paths(cfg: DictConfig, seed: int) -> list[Path]:
     run_directory = resolve_run_directory(cfg, seed)
     train_config_path = resolve_path(
@@ -209,19 +230,11 @@ def required_paths(cfg: DictConfig, seed: int) -> list[Path]:
     checkpoint_path = Path(
         cfg.model.get("checkpoint", run_directory / "checkpoints" / "last.ckpt")
     ).expanduser()
-    dataset_name = Path(str(cfg.eval.dataset_name)).expanduser()
-    dataset_path = (
-        dataset_name.with_suffix(".h5")
-        if dataset_name.is_absolute()
-        else Path(cfg.dataset.root).expanduser()
-        / "datasets"
-        / f"{dataset_name}.h5"
-    )
     return [
         _planning_source(cfg) / "jepa.py",
         train_config_path,
         checkpoint_path,
-        dataset_path,
+        dataset_path(cfg),
     ]
 
 
@@ -249,9 +262,8 @@ def evaluate(cfg: DictConfig, seed: int) -> Path:
     np.random.seed(policy_seed)
 
     dataset = swm.data.HDF5Dataset(
-        cfg.eval.dataset_name,
+        path=dataset_path(cfg),
         keys_to_cache=list(cfg.dataset.keys_to_cache),
-        cache_dir=Path(cfg.dataset.root).expanduser(),
     )
     episodes, start_steps = sample_start_indices(
         dataset,

@@ -114,8 +114,7 @@ def load_model(
 
 def get_dataset(cfg: DictConfig):
     return swm.data.HDF5Dataset(
-        cfg.eval.dataset_name,
-        cache_dir=Path(cfg.dataset.root).expanduser(),
+        path=dataset_path(cfg),
         keys_to_cache=list(cfg.dataset.keys_to_cache),
     )
 

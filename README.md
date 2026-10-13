@@ -97,6 +97,45 @@ is also recognized. Explicit `DRIFTWORLD_SOURCE_ROOT`, `IRASIM_SOURCE_ROOT`,
 
 ## Data
 
+### Download the published artifacts
+
+The AnyGoal datasets and checkpoints are published in separate Hugging Face
+repositories with the same ID. After authenticating for private repositories,
+download each complete repository directly into the paths used by the bundled
+evaluation configs:
+
+```bash
+hf auth login
+hf download HazelNam/anygoal --repo-type model \
+  --local-dir "${STABLEWM_HOME:-$HOME/.stable_worldmodel}/anygoal"
+hf download HazelNam/anygoal --repo-type dataset \
+  --local-dir "${STABLEWM_HOME:-$HOME/.stable_worldmodel}/datasets"
+```
+
+These commands download all artifacts published in the AnyGoal repositories.
+The dataset repository intentionally excludes the upstream PushT, Cube, and
+TwoRoom base datasets, and the model repository intentionally excludes their
+official LeWM and PreJEPA checkpoints. Those upstream artifacts must still be
+downloaded from their original publishers.
+
+The AnyGoal CLI can instead download only the artifacts required by one
+evaluation, download missing artifacts immediately before evaluation, or
+download one complete artifact category:
+
+```bash
+anygoal artifacts download --model driftworld --dataset cubehop
+
+anygoal eval planning \
+  --model driftworld --dataset cubehop --download
+
+anygoal artifacts download --checkpoints --all
+anygoal artifacts download --datasets --all
+```
+
+An evaluation dataset uses the checkpoint trained on its base family; for
+example, `cubehop` resolves to `driftworld_cube.pt`. Existing local files are
+reused.
+
 Generated variants use their registered in-package collector. Omitted options
 use that dataset's declared defaults, while Python keyword names map directly
 to the corresponding hyphenated CLI options.

@@ -1,0 +1,55 @@
+schema_version: 1
+
+repositories:
+  datasets:
+    repo_id: HazelNam/anygoal
+    repo_type: dataset
+  checkpoints:
+    repo_id: HazelNam/anygoal
+    repo_type: model
+
+datasets:
+  avoidt: avoidt_test.h5
+  stackt: stackt_test.h5
+  pusht-antigoal: pusht_antigoal_test.h5
+  cubehop: cube_hop_test.h5
+  cubediagonal: cube_diagonal_test.h5
+  insertpeg: manipulator_insert_peg_weak_expert_train.h5
+  avoid_peg: avoid_peg_test.h5
+  extractpeg: extract_peg_test.h5
+  tworoom_route: tworoom_route_test.h5
+
+checkpoints:
+  lewm:
+    insert_peg: lewm_insertpeg.pt
+  sensorimotor:
+    pusht: sensorimotor_pusht.ckpt
+    cube: sensorimotor_cube.ckpt
+    tworoom: sensorimotor_tworoom.ckpt
+    insert_peg: sensorimotor_insertpeg.ckpt
+  prejepa:
+    insert_peg: prejepa_insertpeg.pt
+  driftworld:
+    pusht: driftworld_pusht.pt
+    cube: driftworld_cube.pt
+    tworoom: driftworld_tworoom.pt
+    insert_peg: driftworld_insertpeg.pt
+  irasim:
+    pusht: irasim_pusht.pt
+    cube: irasim_cube.pt
+    tworoom: irasim_tworoom.pt
+  toy-adaln:
+    pusht: toy-adaln_pusht.pt
+    cube: toy-adaln_cube.pt
+    tworoom: toy-adaln_tworoom.pt
+    insert_peg: toy-adaln_insertpeg.pt
+  toy-action-duplicate:
+    pusht: toy-action-duplicate_pusht.pt
+    cube: toy-action-duplicate_cube.pt
+    tworoom: toy-action-duplicate_tworoom.pt
+    insert_peg: toy-action-duplicate_insertpeg.pt
+  toy-driftworld:
+    pusht: toy-driftworld_pusht.pt
+    cube: toy-driftworld_cube.pt
+    tworoom: toy-driftworld_tworoom.pt
+    insert_peg: toy-driftworld_insertpeg.pt

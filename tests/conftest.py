@@ -6,7 +6,10 @@ from pathlib import Path
 import pytest
 
 
-os.environ.setdefault("MUJOCO_GL", "osmesa")
+_has_allocated_gpu = bool(
+    os.environ.get("CUDA_VISIBLE_DEVICES") or os.environ.get("SLURM_JOB_GPUS")
+)
+os.environ.setdefault("MUJOCO_GL", "egl" if _has_allocated_gpu else "osmesa")
 
 
 @pytest.fixture(scope="session")

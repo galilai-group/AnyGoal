@@ -40,6 +40,7 @@ def test_plans_every_combination_with_one_real_trial(
         "eval.num_eval=1",
         "eval.eval_budget=25",
         "solver.num_samples=2",
+        "solver.topk=1",
         "solver.n_steps=1",
         f"output.directory={output}",
     ]

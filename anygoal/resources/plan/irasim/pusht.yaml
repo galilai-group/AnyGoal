@@ -1,6 +1,6 @@
 model:
   checkpoint: ${oc.env:IRASIM_CHECKPOINT,'~/.stable_worldmodel/anygoal/irasim_pusht.pt'}
-  vae_model_path: ${oc.env:IRASIM_VAE_PATH,'~/.cache/anygoal/checkpoints/SET_IRASIM_SDXL'}
+  vae_model_path: ${oc.env:IRASIM_VAE_PATH,stabilityai/stable-diffusion-xl-base-1.0}
   vae_subfolder: vae
   scheduler_path: ${oc.env:IRASIM_SCHEDULER_PATH,'~/.cache/anygoal/sources/IRASim/pretrained_models/scheduler'}
   beta_start: 0.0001

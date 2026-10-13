@@ -81,9 +81,12 @@ def build_adapter(
             cfg.policy = policy
         else:
             checkpoint_root = checkpoint.parent
-            cfg.model.checkpoint = str(checkpoint)
-            if cfg.model.get("config"):
-                cfg.model.config = str(resolve_path(cfg.model.config))
+            OmegaConf.update(
+                cfg, "model.checkpoint", str(checkpoint), force_add=True
+            )
+            model_config = OmegaConf.select(cfg, "model.config")
+            if model_config:
+                cfg.model.config = str(resolve_path(model_config))
         patch_transformers_vit_pickle_compat()
         model = load_lewm_cost_model(cfg, checkpoint_root)
         patch_loaded_model_compat(model)

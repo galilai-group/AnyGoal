@@ -6,7 +6,7 @@ world:
   env_name: anygoal/CubeDiagonal-v0
 
 eval:
-  dataset_name: ~/.stable_worldmodel/datasets/cube_diagonal_test
+  dataset_name: cube_diagonal_test
 
 output:
   filename: cube_diagonal_toy_results.txt

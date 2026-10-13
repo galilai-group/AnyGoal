@@ -13,6 +13,7 @@ from torch import nn
 from anygoal.runners.train.train_driftworld import (
     CheckpointingTorchProxy,
     TrainingTelemetry,
+    validate_config,
 )
 from anygoal.resources import resource_path
 from anygoal.wm.driftworld import (
@@ -24,6 +25,7 @@ from anygoal.wm.driftworld import (
     DriftWorldWorldModelPolicy,
     driftworld_image_transform,
 )
+
 
 class FakeEMA(nn.Module):
     def forward(self, noise, history, actions):
@@ -183,9 +185,7 @@ def test_relative_action_cost_matches_stableworld_contract_and_is_deterministic(
 
 
 def test_action_processor_matches_standard_scaler_and_restores_raw_model_actions():
-    raw_actions = np.asarray(
-        [[-0.4, 0.1], [0.0, 0.3], [0.4, 0.5]], dtype=np.float32
-    )
+    raw_actions = np.asarray([[-0.4, 0.1], [0.0, 0.3], [0.4, 0.5]], dtype=np.float32)
     processor = DriftWorldActionProcessor.fit(raw_actions)
     standardized = processor.transform(raw_actions)
     np.testing.assert_allclose(standardized.mean(axis=0), 0.0, atol=1e-6)
@@ -332,18 +332,27 @@ def test_permanent_checkpoint_is_independent_and_never_overwritten(tmp_path):
 
 
 def test_cube_train_and_planning_configs_are_lewm_aligned():
-    train_cfg = OmegaConf.load(
-        resource_path("train", "driftworld", "cube_lewm.yaml")
-    )
-    planning_cfg = OmegaConf.load(
-        resource_path("plan", "driftworld", "cube_lewm.yaml")
-    )
+    train_cfg = OmegaConf.load(resource_path("train", "driftworld", "cube_lewm.yaml"))
+    planning_cfg = OmegaConf.load(resource_path("plan", "driftworld", "cube_lewm.yaml"))
     assert train_cfg.model.source == planning_cfg.model.source == "robomimic"
-    assert train_cfg.model.num_history_frames == planning_cfg.model.num_history_frames == 3
-    assert train_cfg.model.num_future_frames == planning_cfg.model.num_future_frames == 1
+    assert (
+        train_cfg.model.num_history_frames == planning_cfg.model.num_history_frames == 3
+    )
+    assert (
+        train_cfg.model.num_future_frames == planning_cfg.model.num_future_frames == 1
+    )
     assert train_cfg.data.frameskip == planning_cfg.model.action_frameskip == 5
     assert train_cfg.model.action_dim == 5
     assert train_cfg.train.permanent_ckpt_every == 20_000
+
+
+def test_robomimic_training_config_uses_five_dimensional_validator(tmp_path):
+    cfg = OmegaConf.load(resource_path("train", "driftworld", "cube_lewm.yaml"))
+    dataset = tmp_path / "cube.h5"
+    dataset.touch()
+    cfg.data.dataset_name = str(dataset)
+
+    assert validate_config(cfg) == dataset
 
 
 def test_tworoom_configs_reuse_pusht_model_and_are_lewm_aligned():

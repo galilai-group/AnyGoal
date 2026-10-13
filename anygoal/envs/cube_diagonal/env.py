@@ -7,6 +7,12 @@ import mujoco
 import numpy as np
 from stable_worldmodel.envs.ogbench.cube_env import DEFAULT_VARIATIONS, CubeEnv
 
+from anygoal.envs.cube_hop.env import (
+    EVALUATION_CUBE_POSITION_TOLERANCE,
+    EVALUATION_EE_POSITION_TOLERANCE,
+    EVALUATION_EE_YAW_TOLERANCE,
+)
+
 
 DIAGONAL_GRASP_OFFSET = np.pi / 4.0
 DEFAULT_CUBE_YAW_CENTER = np.deg2rad(85.0)
@@ -30,9 +36,29 @@ class CubeDiagonalEnv(CubeEnv):
     """Original single-cube task with diagonal-grasp contact auditing."""
 
     def __init__(self, **kwargs) -> None:
-        self._cube_yaw_center = kwargs.pop(
-            "cube_yaw_center", DEFAULT_CUBE_YAW_CENTER
-        )
+        self._evaluation_tolerances = {
+            "ee_position": float(
+                kwargs.pop(
+                    "evaluation_ee_position_tolerance",
+                    EVALUATION_EE_POSITION_TOLERANCE,
+                )
+            ),
+            "ee_yaw": float(
+                kwargs.pop(
+                    "evaluation_ee_yaw_tolerance",
+                    EVALUATION_EE_YAW_TOLERANCE,
+                )
+            ),
+            "cube_position": float(
+                kwargs.pop(
+                    "evaluation_cube_position_tolerance",
+                    EVALUATION_CUBE_POSITION_TOLERANCE,
+                )
+            ),
+        }
+        if any(value <= 0.0 for value in self._evaluation_tolerances.values()):
+            raise ValueError("CubeDiagonal evaluation tolerances must be positive.")
+        self._cube_yaw_center = kwargs.pop("cube_yaw_center", DEFAULT_CUBE_YAW_CENTER)
         self._cube_yaw_half_width = kwargs.pop(
             "cube_yaw_half_width", DEFAULT_CUBE_YAW_HALF_WIDTH
         )
@@ -78,18 +104,14 @@ class CubeDiagonalEnv(CubeEnv):
         variation_values.update(reset_options.get("variation_values", {}))
         reset_options["variation"] = []
         reset_options["variation_values"] = variation_values
-        return super().reset(
-            seed=None, options=reset_options, *args, **kwargs
-        )
+        return super().reset(seed=None, options=reset_options, *args, **kwargs)
 
     def post_compilation_objects(self) -> None:
         super().post_compilation_objects()
         self._diagonal_cube_geom_id = self._cube_geom_ids_list[0][0]
         self._diagonal_pad_geom_sides: dict[int, str] = {}
         for geom_id in range(self._model.ngeom):
-            name = mujoco.mj_id2name(
-                self._model, mujoco.mjtObj.mjOBJ_GEOM, geom_id
-            )
+            name = mujoco.mj_id2name(self._model, mujoco.mjtObj.mjOBJ_GEOM, geom_id)
             if name and "robotiq/right_pad" in name:
                 self._diagonal_pad_geom_sides[geom_id] = "right"
             elif name and "robotiq/left_pad" in name:
@@ -106,8 +128,7 @@ class CubeDiagonalEnv(CubeEnv):
         self._diagonal_max_cube_z = max(self._diagonal_max_cube_z, cube_z)
         if (
             cube_z >= LIFT_HEIGHT_THRESHOLD
-            and self._diagonal_consecutive_edge_steps
-            >= STABLE_EDGE_CONTACT_STEPS
+            and self._diagonal_consecutive_edge_steps >= STABLE_EDGE_CONTACT_STEPS
         ):
             self._diagonal_lifted_with_edge_grasp = True
             self._diagonal_lifted_target_indices.add(
@@ -126,9 +147,7 @@ class CubeDiagonalEnv(CubeEnv):
                 self._diagonal_completed_target_indices.add(current_target)
 
     def diagonal_grasp_summary(self) -> dict:
-        separations = np.asarray(
-            self._diagonal_edge_separations, dtype=np.float64
-        )
+        separations = np.asarray(self._diagonal_edge_separations, dtype=np.float64)
         return {
             "expected_pad_gap_m": EXPECTED_PAD_GAP,
             "ever_bilateral_pad_contact": self._diagonal_ever_bilateral_contact,
@@ -136,9 +155,7 @@ class CubeDiagonalEnv(CubeEnv):
             "max_consecutive_opposite_edge_steps": (
                 self._diagonal_max_consecutive_edge_steps
             ),
-            "lifted_with_opposite_edge_grasp": (
-                self._diagonal_lifted_with_edge_grasp
-            ),
+            "lifted_with_opposite_edge_grasp": (self._diagonal_lifted_with_edge_grasp),
             "ever_goal_success": self._diagonal_ever_goal_success,
             "max_cube_z_m": self._diagonal_max_cube_z,
             "opposite_edge_contact_steps": len(separations),
@@ -156,9 +173,7 @@ class CubeDiagonalEnv(CubeEnv):
             "target_positions": [
                 position.tolist() for position in self._diagonal_target_positions
             ],
-            "targets_with_diagonal_lift": sorted(
-                self._diagonal_lifted_target_indices
-            ),
+            "targets_with_diagonal_lift": sorted(self._diagonal_lifted_target_indices),
             "targets_completed": sorted(self._diagonal_completed_target_indices),
             "completed_diagonal_tasks": len(
                 self._diagonal_lifted_target_indices
@@ -182,9 +197,7 @@ class CubeDiagonalEnv(CubeEnv):
     def set_new_target(self, return_info=True, **kwargs):
         """Record each original fixed-target PlanOracle cycle."""
         super().set_new_target(return_info=False, **kwargs)
-        target_position = self._data.mocap_pos[
-            self._cube_target_mocap_ids[0]
-        ].copy()
+        target_position = self._data.mocap_pos[self._cube_target_mocap_ids[0]].copy()
         self._diagonal_target_positions.append(target_position)
         if return_info:
             return self.compute_observation(), self.get_reset_info()
@@ -236,16 +249,10 @@ class CubeDiagonalEnv(CubeEnv):
                     ) < abs(best_separation - EXPECTED_PAD_GAP):
                         best_separation = separation
 
-        cube_yaw = float(
-            self.compute_ob_info()["privileged/block_0_yaw"][0]
-        )
-        effector_yaw = float(
-            self.compute_ob_info()["proprio/effector_yaw"][0]
-        )
+        cube_yaw = float(self.compute_ob_info()["privileged/block_0_yaw"][0])
+        effector_yaw = float(self.compute_ob_info()["proprio/effector_yaw"][0])
         yaw_residual = abs(
-            wrapped_angle_error(
-                cube_yaw + DIAGONAL_GRASP_OFFSET, effector_yaw
-            )
+            wrapped_angle_error(cube_yaw + DIAGONAL_GRASP_OFFSET, effector_yaw)
         )
         yaw_residual = min(
             yaw_residual,
@@ -253,8 +260,7 @@ class CubeDiagonalEnv(CubeEnv):
             abs(yaw_residual - np.pi),
         )
         edge_contact = (
-            best_separation is not None
-            and yaw_residual <= DIAGONAL_YAW_TOLERANCE
+            best_separation is not None and yaw_residual <= DIAGONAL_YAW_TOLERANCE
         )
         if edge_contact:
             self._diagonal_ever_edge_contact = True

@@ -12,20 +12,22 @@ pytestmark = pytest.mark.matrix_e2e
 
 def _reduced_training_options(model_id, output_dir):
     options = {
-        "batch_size": 1,
-        "num_workers": 0,
+        "batch_size": 2 if model_id in {"prejepa", "sensorimotor"} else 1,
+        "num_workers": 1,
         "output_dir": output_dir,
     }
     if model_id in {"driftworld", "irasim", "toy-driftworld"}:
         options["max_steps"] = 1
     else:
-        options["max_epochs"] = 1
+        options["max_epochs"] = 2
     if model_id in {"lewm", "prejepa", "toy-adaln", "toy-action-duplicate"}:
         options["+trainer__limit_train_batches"] = 1
         options["+trainer__limit_val_batches"] = 1
     if model_id == "sensorimotor":
         options["+trainer__limit_train_batches"] = 1
         options["trainer__limit_val_batches"] = 1
+        options["trainer__val_check_interval"] = 1
+        options["artifacts__embedding_subset_size"] = 2
     if model_id in {
         "sensorimotor",
         "toy-adaln",
