@@ -17,7 +17,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 import torch
-from anygoal.paths import cache_root
+from anygoal.paths import cache_root, data_root, output_root, stablewm_root
 from scipy.ndimage import gaussian_filter
 
 
@@ -27,15 +27,10 @@ MAHALANOBIS_TARGET_FRACTION = 0.95
 KDE_REFERENCE_QUANTILE = 0.01
 KDE_TARGET_FRACTION = 0.95
 RANGE_TARGET_FRACTION = 0.99
-DATASET_DIR = Path.home() / ".stable_worldmodel" / "datasets"
-STABLE_WORLDMODEL_DIR = DATASET_DIR.parent
+DATASET_DIR = data_root()
+STABLE_WORLDMODEL_DIR = stablewm_root()
 FALLBACK_DATA_DIR = cache_root() / "data"
-DEFAULT_OUTPUT_DIR = (
-    Path(__file__).resolve().parents[2]
-    / "outputs"
-    / "analysis"
-    / "distribution_support"
-)
+DEFAULT_OUTPUT_DIR = output_root() / "analysis" / "distribution_support"
 
 
 @dataclass

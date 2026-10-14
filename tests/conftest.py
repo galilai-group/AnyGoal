@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from anygoal.paths import data_root
+
 
 _has_allocated_gpu = bool(
     os.environ.get("CUDA_VISIBLE_DEVICES") or os.environ.get("SLURM_JOB_GPUS")
@@ -15,12 +17,7 @@ os.environ.setdefault("MUJOCO_GL", "egl" if _has_allocated_gpu else "osmesa")
 @pytest.fixture(scope="session")
 def matrix_data_root() -> Path:
     root = (
-        Path(
-            os.environ.get(
-                "ANYGOAL_MATRIX_DATA_ROOT",
-                os.environ.get("ANYGOAL_DATA_ROOT", "~/.stable_worldmodel/datasets"),
-            )
-        )
+        Path(os.environ.get("ANYGOAL_MATRIX_DATA_ROOT", data_root()))
         .expanduser()
         .resolve()
     )

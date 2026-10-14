@@ -11,6 +11,15 @@ from typing import Any, Mapping
 
 import yaml
 
+from anygoal.paths import (
+    anygoal_home,
+    cache_root,
+    checkpoint_root,
+    data_root,
+    output_root,
+    source_root,
+)
+
 
 _ENV_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*):-([^}]*)\}")
 
@@ -71,4 +80,12 @@ def load_config(
         config = _merge(config, _read_yaml(Path(experiment).expanduser()))
     if overrides:
         config = _merge(config, overrides)
+    config["paths"] = {
+        "home": str(anygoal_home()),
+        "data": str(data_root()),
+        "checkpoints": str(checkpoint_root()),
+        "outputs": str(output_root()),
+        "sources": str(source_root()),
+        "cache": str(cache_root()),
+    }
     return _expand(config)

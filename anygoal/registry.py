@@ -44,6 +44,7 @@ class ModelSpec:
     planner_config_style: str
     planner_seed_style: str
     planning_checkpoint_key: str
+    planning_training_config_key: str | None
 
 
 @dataclass(frozen=True)
@@ -118,6 +119,9 @@ class Registry:
                 planner_seed_style=item.get("planner_seed_style", "override"),
                 planning_checkpoint_key=item.get(
                     "planning_checkpoint_key", "model.checkpoint"
+                ),
+                planning_training_config_key=item.get(
+                    "planning_training_config_key"
                 ),
             )
             for item_id, item in catalog["models"].items()

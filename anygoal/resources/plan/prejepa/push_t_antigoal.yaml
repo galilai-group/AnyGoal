@@ -42,5 +42,5 @@ eval:
           value: goal_state
 
 output:
-  directory: outputs/prejepa/${variant}/push_t_antigoal/seed_${seed}
+  directory: ${anygoal.path:outputs}/prejepa/${variant}/push_t_antigoal/seed_${seed}
   filename: push_t_antigoal_prejepa_results.txt

@@ -84,7 +84,7 @@ data:
     frameskip: 5
     num_steps: 2
     name: manipulator_insert_peg_weak_expert_train
-    cache_dir: ${oc.env:EXTERNAL_DATA_ROOT,'~/.stable_worldmodel'}
+    cache_dir: ${anygoal.path:data}
     keys_to_load:
       - pixels
       - action

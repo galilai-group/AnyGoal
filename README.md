@@ -79,7 +79,8 @@ toy-adaln, toy-action-duplicate, toy-driftworld
 Evaluation and training integrations use the original upstream repositories.
 Download only the model sources you need; AnyGoal checks out the revisions
 recorded in `anygoal/resources/sources.yaml` under
-`~/.cache/anygoal/sources` and does not run a hidden `pip install`:
+`$ANYGOAL_SOURCE_ROOT` (by default `$ANYGOAL_HOME/sources`) and does not run a
+hidden `pip install`:
 
 ```bash
 anygoal models list
@@ -90,6 +91,10 @@ anygoal models install sensorimotor
 # Or download all four:
 anygoal models install --all
 ```
+
+The IRASim install also fetches its pinned `pytorch-fid` and `stylegan-v`
+evaluation sources. Upstream stores them as gitlinks without a `.gitmodules`
+file, so AnyGoal resolves them explicitly.
 
 For development, an initialized `worldmodels/` submodule at the pinned commit
 is also recognized. Explicit `DRIFTWORLD_SOURCE_ROOT`, `IRASIM_SOURCE_ROOT`,
@@ -107,9 +112,9 @@ evaluation configs:
 ```bash
 hf auth login
 hf download HazelNam/anygoal --repo-type model \
-  --local-dir "${STABLEWM_HOME:-$HOME/.stable_worldmodel}/anygoal"
+  --local-dir "$(anygoal config path checkpoints)"
 hf download HazelNam/anygoal --repo-type dataset \
-  --local-dir "${STABLEWM_HOME:-$HOME/.stable_worldmodel}/datasets"
+  --local-dir "$(anygoal config path data)"
 ```
 
 These commands download all artifacts published in the AnyGoal repositories.
@@ -139,8 +144,9 @@ reused.
 Generated variants use their registered in-package collector. Omitted options
 use that dataset's declared defaults, while Python keyword names map directly
 to the corresponding hyphenated CLI options.
-Generated datasets default to `$STABLEWM_HOME/datasets` (or
-`~/.stable_worldmodel/datasets` when `STABLEWM_HOME` is unset).
+Generated datasets use `ANYGOAL_DATA_ROOT` when set. Otherwise AnyGoal asks
+Stable Worldmodel for its dataset directory, respecting `STABLEWM_HOME` and
+Stable Worldmodel's own default without duplicating that default here.
 
 The Python and terminal interfaces call the same in-package collector:
 
@@ -165,7 +171,7 @@ HDF5 files rather than reconstructed by AnyGoal collectors. Download them from
 the published Hugging Face dataset repository, then validate them in place:
 
 ```bash
-anygoal data validate ~/.stable_worldmodel/datasets/pusht_expert_train.h5 \
+anygoal data validate "$(anygoal config path data)/pusht_expert_train.h5" \
   --dataset pusht
 ```
 
@@ -184,11 +190,11 @@ in [`scripts/train/training_api_ids.csv`](scripts/train/training_api_ids.csv).
 
 ```bash
 anygoal train driftworld \
-  --data ~/.stable_worldmodel/datasets/pusht_expert_train.h5 \
+  --data "$(anygoal config path data)/pusht_expert_train.h5" \
   --task pusht --dry-run
 
 anygoal train irasim \
-  --data ~/.stable_worldmodel/datasets/manipulator_insert_peg_weak_expert_train.h5 \
+  --data "$(anygoal config path data)/manipulator_insert_peg_weak_expert_train.h5" \
   --task insert_peg --dry-run
 
 anygoal eval rollout \
@@ -216,6 +222,27 @@ need to be supplied before release.
 
 ## Site and W&B configuration
 
+AnyGoal-owned files share one root while compatible datasets continue to use
+Stable Worldmodel's storage policy:
+
+| Variable | Default |
+| --- | --- |
+| `ANYGOAL_HOME` | `~/.anygoal` |
+| `ANYGOAL_DATA_ROOT` | Stable Worldmodel's `datasets` directory |
+| `ANYGOAL_CHECKPOINT_ROOT` | `$ANYGOAL_HOME/checkpoints` |
+| `ANYGOAL_OUTPUT_ROOT` | `./outputs` |
+| `ANYGOAL_SOURCE_ROOT` | `$ANYGOAL_HOME/sources` |
+| `ANYGOAL_CACHE_ROOT` | `$ANYGOAL_HOME/cache` |
+
+Each specific root overrides the path derived from `ANYGOAL_HOME`. Inspect the
+effective paths without relying on shell-variable expansion:
+
+```bash
+anygoal config path data
+anygoal config path checkpoints
+anygoal config path sources
+```
+
 An optional site configuration can be generated from the package defaults:
 
 ```bash
@@ -229,7 +256,9 @@ Configuration precedence is:
 CLI override > experiment config > user/site config > package defaults
 ```
 
-The site file centralizes output roots and W&B entity/project/mode.
+The site file centralizes W&B entity/project/mode. Filesystem roots come from
+the environment variables above and are reported as read-only effective values
+by `anygoal config show`.
 
 ## Evaluation matrix
 

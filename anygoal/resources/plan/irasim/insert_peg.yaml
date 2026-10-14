@@ -1,8 +1,8 @@
 model:
-  checkpoint: ~/.stable_worldmodel/anygoal/irasim_insertpeg.pt
+  checkpoint: ${anygoal.path:checkpoints}/irasim_insertpeg.pt
   vae_model_path: stabilityai/stable-diffusion-xl-base-1.0
   vae_subfolder: vae
-  scheduler_path: ~/.cache/anygoal/sources/IRASim/pretrained_models/scheduler
+  scheduler_path: ${anygoal.path:sources}/IRASim/pretrained_models/scheduler
   beta_start: 0.0001
   beta_end: 0.02
   beta_schedule: linear
@@ -17,7 +17,7 @@ model:
   cost_type: pixel_mse
 
 dataset:
-  root: ~/.stable_worldmodel
+  root: ${anygoal.path:data}
   keys_to_cache: [action]
   action_stats_name: manipulator_insert_peg_weak_expert_train
 
@@ -57,5 +57,5 @@ eval:
         goal_state: {value: goal_observation}
 
 output:
-  directory: outputs/planning_irasim_insert_peg
+  directory: ${anygoal.path:outputs}/planning_irasim_insert_peg
   save_video: false

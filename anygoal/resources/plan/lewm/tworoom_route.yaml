@@ -10,10 +10,10 @@ world:
 
 seed: 0
 policy: lewm_tworoom
-cache_dir: ~/.stable_worldmodel
+cache_dir: ${anygoal.path:checkpoints}
 model:
-  checkpoint: ~/.stable_worldmodel/anygoal/lewm_tworoom.ckpt
-model_source_root: ${oc.env:LEWM_SOURCE_ROOT,'~/.cache/anygoal/sources/lewm'}
+  checkpoint: ${anygoal.path:checkpoints}/lewm_tworoom.ckpt
+model_source_root: ${oc.env:LEWM_SOURCE_ROOT,${anygoal.path:sources}/lewm}
 
 dataset:
   stats: ${eval.dataset_name}
@@ -41,5 +41,5 @@ eval:
           value: goal_proprio
 
 output:
-  directory: outputs/planning_tworoom_route/lewm/seed_${seed}
+  directory: ${anygoal.path:outputs}/planning_tworoom_route/lewm/seed_${seed}
   filename: tworoom_route_results.txt

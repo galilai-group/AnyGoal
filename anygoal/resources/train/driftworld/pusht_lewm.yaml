@@ -24,7 +24,7 @@ opt:
 data:
   batch_size: 2
   dataset_name: pusht_expert_train
-  dataset_root: ${oc.env:DRIFTWORLD_DATA_ROOT,'~/.stable_worldmodel'}
+  dataset_root: ${anygoal.path:data}
   frameskip: 5
   action_mode: relative
   pred_horizon: 4
@@ -57,7 +57,7 @@ wandb_info:
   key: ${oc.env:WANDB_API_KEY,""}
 
 output:
-  checkpoint_root: ~/.cache/anygoal/checkpoints
+  checkpoint_root: ${anygoal.path:checkpoints}
   description: driftworld_pusht_h5_lewm
   run_directory: ${oc.env:DRIFTWORLD_RUN_DIRECTORY,null}
 

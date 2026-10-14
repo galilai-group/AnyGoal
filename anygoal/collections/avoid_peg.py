@@ -22,11 +22,10 @@ os.environ.setdefault("MUJOCO_GL", "osmesa")
 DEFAULT_REFERENCE = data_root() / "manipulator_insert_peg_weak_expert_train.h5"
 DEFAULT_OUTPUT = data_root() / "avoid_peg_test.h5"
 DEFAULT_SUPPORT_CACHE = (
-    Path(
-        os.environ.get("ANYGOAL_SUPPORT_CACHE_ROOT", "~/.cache/anygoal/support")
-    ).expanduser()
-    / "avoid_peg_support_v1.npz"
-)
+    Path(os.environ["ANYGOAL_SUPPORT_CACHE_ROOT"]).expanduser()
+    if "ANYGOAL_SUPPORT_CACHE_ROOT" in os.environ
+    else cache_root() / "support"
+) / "avoid_peg_support_v1.npz"
 
 
 def _initialize_episode(env, rng, bank, target_side, support):

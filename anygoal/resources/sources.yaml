@@ -15,6 +15,14 @@ sources:
     directory: IRASim
     environment: IRASIM_SOURCE_ROOT
     marker: models/irasim.py
+    # Upstream records these as gitlinks but does not provide a .gitmodules file.
+    nested_sources:
+      - repository: https://github.com/mseitzer/pytorch-fid.git
+        revision: b9c18118d082cbd263c1b8963fc4221dc1cbb659
+        directory: pytorch-fid
+      - repository: https://github.com/universome/stylegan-v.git
+        revision: 3fecd69c602e1cda204357201461c0fb0a634909
+        directory: stylegan-v
   lewm:
     aliases: [le-wm]
     repository: https://github.com/lucas-maes/le-wm.git

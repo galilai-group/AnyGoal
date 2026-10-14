@@ -44,10 +44,6 @@ def test_plans_every_combination_with_one_real_trial(
         "solver.n_steps=1",
         f"output.directory={output}",
     ]
-    training_config = configured_path(profile, "training_config")
-    if model_id.startswith("toy-") and training_config is not None:
-        overrides.append(f"model.config_path={training_config}")
-
     assert (
         main(
             [

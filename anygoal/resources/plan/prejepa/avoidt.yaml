@@ -42,5 +42,5 @@ eval:
           value: goal_state
 
 output:
-  directory: outputs/prejepa/${variant}/avoidt/seed_${seed}
+  directory: ${anygoal.path:outputs}/prejepa/${variant}/avoidt/seed_${seed}
   filename: avoidt_prejepa_results.txt

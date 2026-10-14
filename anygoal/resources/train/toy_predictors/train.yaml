@@ -45,7 +45,7 @@ trainer:
   log_every_n_steps: 10
 
 output:
-  checkpoint_root: ~/.cache/anygoal/checkpoints/toy_predictors
+  checkpoint_root: ${anygoal.path:checkpoints}/toy_predictors
   save_every_n_epochs: 1
 
 wandb:

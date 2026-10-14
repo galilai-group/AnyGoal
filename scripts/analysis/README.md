@@ -1,8 +1,8 @@
 # Analysis and visualization recipes
 
-Run commands from the repository root. Datasets default to
-`~/.stable_worldmodel/datasets`; generated artifacts default to
-`outputs/analysis`.
+Run commands from the repository root. Datasets use `ANYGOAL_DATA_ROOT`, or
+the directory resolved by Stable Worldmodel when it is unset. Generated
+artifacts default to `outputs/analysis`.
 
 ## Distribution support
 
@@ -30,20 +30,6 @@ model/dataset matrix.
 python scripts/analysis/build_stat_fullresult.py --help
 python scripts/analysis/run_planning_visualization.py --help
 python scripts/analysis/visualize_model_rollouts.py --help
-```
-
-## Counterfactual analysis
-
-The counterfactual sensitivity protocol is a research analysis for LeWM,
-Sensorimotor, and the toy AdaLN predictor rather than a public AnyGoal evaluation
-API. Its fixed intervention actions live in
-`anygoal/resources/counterfactual/`.
-
-```bash
-python -m scripts.analysis.run_counterfactual_evaluation --help
-python -m scripts.analysis.plot_counterfactual_grids --help
-python -m scripts.analysis.summarize_counterfactual_metrics --help
-python -m scripts.analysis.update_insert_peg_after_grip_bias --help
 ```
 
 The public rollout/planning evaluation matrix is retained in

@@ -1,5 +1,5 @@
 model:
-  checkpoint: ${oc.env:DRIFTWORLD_CUBE_CHECKPOINT,'~/.stable_worldmodel/anygoal/driftworld_cube.pt'}
+  checkpoint: ${oc.env:DRIFTWORLD_CUBE_CHECKPOINT,${anygoal.path:checkpoints}/driftworld_cube.pt}
   source: robomimic
   unet_type: multi
   temp_list: [0.02, 0.05, 0.2]
@@ -14,7 +14,7 @@ model:
   rollout_seed: 0
 
 dataset:
-  root: ${oc.env:DRIFTWORLD_DATA_ROOT,'~/.stable_worldmodel'}
+  root: ${anygoal.path:data}
   keys_to_cache: [action]
 
 world:
@@ -72,5 +72,5 @@ eval:
           value: goal_privileged_block_0_pos
 
 output:
-  directory: ${oc.env:DRIFTWORLD_OUTPUT_ROOT,outputs/driftworld}/cube_hop
+  directory: ${oc.env:DRIFTWORLD_OUTPUT_ROOT,${anygoal.path:outputs}/driftworld}/cube_hop
   save_video: false

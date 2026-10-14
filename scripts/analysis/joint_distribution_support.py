@@ -12,15 +12,10 @@ import numpy as np
 import torch
 
 import distribution_support as support
-from anygoal.paths import cache_root
+from anygoal.paths import cache_root, output_root
 
 
-OUTPUT_DIR = (
-    Path(__file__).resolve().parents[2]
-    / "outputs"
-    / "analysis"
-    / "joint_distribution_support"
-)
+OUTPUT_DIR = output_root() / "analysis" / "joint_distribution_support"
 BASE_CACHE_DIR = cache_root() / "joint_kde_base_cache_v1"
 CACHE_VERSION = 1
 

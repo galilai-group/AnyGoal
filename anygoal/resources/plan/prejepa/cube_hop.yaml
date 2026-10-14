@@ -56,5 +56,5 @@ eval:
           value: goal_privileged_block_0_pos
 
 output:
-  directory: outputs/cube_hop/prejepa_noprop/seed_${seed}
+  directory: ${anygoal.path:outputs}/cube_hop/prejepa_noprop/seed_${seed}
   filename: cube_hop_prejepa_noprop_results.txt

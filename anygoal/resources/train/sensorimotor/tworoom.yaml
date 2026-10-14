@@ -71,7 +71,7 @@ data:
     num_steps: 2
     frameskip: 5
     name: tworoom_train
-    cache_dir: ${oc.env:EXTERNAL_DATA_ROOT,data/external}
+    cache_dir: ${oc.env:EXTERNAL_DATA_ROOT,${anygoal.path:data}}
     keys_to_load: [pixels, action, proprio]
     keys_to_cache: [action, proprio]
 final_training:

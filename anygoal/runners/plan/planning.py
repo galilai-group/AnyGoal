@@ -17,6 +17,7 @@ from sklearn import preprocessing
 from torchvision.transforms import v2 as transforms
 import stable_worldmodel as swm
 import anygoal  # noqa: F401
+from anygoal.paths import checkpoint_root, data_root, output_root
 from anygoal.envs.cube_hop.env import (
     add_cube_evaluation_metrics,
     prepare_cube_evaluation,
@@ -330,12 +331,9 @@ def get_episodes_length(dataset, episodes):
 
 
 def get_dataset(cfg, dataset_name):
-    cache_directory = Path(
-        cfg.get("cache_dir") or swm.data.utils.get_cache_dir()
-    ).expanduser()
     dataset_path = Path(str(dataset_name)).expanduser()
     if not dataset_path.is_absolute():
-        dataset_path = cache_directory / "datasets" / dataset_path
+        dataset_path = data_root() / dataset_path
     if not dataset_path.suffix:
         dataset_path = dataset_path.with_suffix(".h5")
     dataset = swm.data.HDF5Dataset(
@@ -395,9 +393,9 @@ def evaluate(cfg: DictConfig, model_loader=load_cost_model):
     policy = cfg.get("policy", "random")
 
     if policy != "random":
-        checkpoint_root = cfg.cache_dir or swm.data.utils.get_cache_dir()
+        model_checkpoint_root = cfg.get("cache_dir") or checkpoint_root()
         patch_transformers_vit_pickle_compat()
-        model = model_loader(cfg, checkpoint_root)
+        model = model_loader(cfg, model_checkpoint_root)
         patch_loaded_model_compat(model)
         model = model.to("cuda")
         model = model.eval()
@@ -417,7 +415,7 @@ def evaluate(cfg: DictConfig, model_loader=load_cost_model):
         Path(output_directory)
         if output_directory
         else (
-            Path(swm.data.utils.get_cache_dir(), cfg.policy).parent
+            output_root()
             if cfg.policy != "random"
             else Path(__file__).parent
         )

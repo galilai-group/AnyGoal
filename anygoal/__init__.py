@@ -1,9 +1,11 @@
 from .envs.registration import register_envs
 from .collection import collect
 from .registry import get_registry
+from .paths import register_omegaconf_resolvers
 from .version import __version__
 
 register_envs()
+register_omegaconf_resolvers()
 
 
 def train(

@@ -1,5 +1,5 @@
 model:
-  checkpoint: ${oc.env:DRIFTWORLD_CHECKPOINT,'~/.stable_worldmodel/anygoal/driftworld_tworoom.pt'}
+  checkpoint: ${oc.env:DRIFTWORLD_CHECKPOINT,${anygoal.path:checkpoints}/driftworld_tworoom.pt}
   unet_name: UNet_PushT
   temp_list: [0.02, 0.05, 0.2]
   n_neg: 16
@@ -15,7 +15,7 @@ model:
   absolute_action_max: 511.0
 
 dataset:
-  root: ${oc.env:DRIFTWORLD_DATA_ROOT,'~/.stable_worldmodel'}
+  root: ${anygoal.path:data}
   keys_to_cache: [action, proprio]
 
 world:
@@ -57,5 +57,5 @@ eval:
           value: goal_proprio
 
 output:
-  directory: ${oc.env:DRIFTWORLD_OUTPUT_ROOT,outputs/driftworld}/lewm/tworoom_route_test
+  directory: ${oc.env:DRIFTWORLD_OUTPUT_ROOT,${anygoal.path:outputs}/driftworld}/lewm/tworoom_route_test
   save_video: false

@@ -1,12 +1,12 @@
 model:
   source_root: null
-  checkpoint_root: ~/.cache/anygoal/checkpoints/sensorimotor_world_model
+  checkpoint_root: ${anygoal.path:checkpoints}/sensorimotor_world_model
   run_name: 20260910_manipulator_insert_peg_weak_expert_inverse_lambda_1_seed0
   config: "resource:train/sensorimotor/insert_peg.yaml"
-  checkpoint: ~/.stable_worldmodel/anygoal/sensorimotor_insertpeg.ckpt
+  checkpoint: ${anygoal.path:checkpoints}/sensorimotor_insertpeg.ckpt
 
 dataset:
-  root: ${oc.env:SENSORIMOTOR_DATA_ROOT,'~/.stable_worldmodel'}
+  root: ${anygoal.path:data}
   keys_to_cache: [action, observation]
 
 world:
@@ -47,4 +47,4 @@ eval:
         goal_state: {value: goal_observation}
 
 output:
-  directory: outputs/planning_insert_peg_20260910/sensorimotor
+  directory: ${anygoal.path:outputs}/planning_insert_peg_20260910/sensorimotor

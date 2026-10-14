@@ -46,5 +46,5 @@ eval:
         cube_pos: {value: goal_privileged_block_0_pos}
 
 output:
-  directory: outputs/planning_cube_diagonal/prejepa/seed_${seed}
+  directory: ${anygoal.path:outputs}/planning_cube_diagonal/prejepa/seed_${seed}
   filename: cube_diagonal_prejepa_results.txt

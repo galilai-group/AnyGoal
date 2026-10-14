@@ -23,6 +23,8 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from transformers import AutoVideoProcessor
 
+from anygoal.paths import checkpoint_root, stablewm_root
+
 
 logger = logging.getLogger(__name__)
 _PRINT_CONFIG = False
@@ -307,10 +309,12 @@ def run(cfg) -> None:
         forward=partial(prejepa_forward, cfg=cfg),
         optim={"model_opt": {"modules": "model", "optimizer": dict(cfg.optimizer)}},
     )
-    run_directory = Path(
-        swm.data.utils.get_cache_dir(sub_folder="checkpoints"),
-        cfg.get("subdir") or "",
+    base_checkpoint_root = (
+        stablewm_root() / "checkpoints"
+        if "STABLEWM_HOME" in os.environ
+        else checkpoint_root()
     )
+    run_directory = base_checkpoint_root / (cfg.get("subdir") or "")
     run_directory.mkdir(parents=True, exist_ok=True)
     OmegaConf.save(cfg, run_directory / "config.yaml")
 

@@ -1,7 +1,7 @@
 # Keep IRASim's original Language-Table branch and select StableWM H5 separately.
 dataset: languagetable
 h5_dataset_name: tworoom
-h5_dataset_root: ${oc.env:IRASIM_DATA_ROOT,'~/.stable_worldmodel'}
+h5_dataset_root: ${anygoal.path:data}
 validation_fraction: 0.05
 max_samples: 300000
 max_validation_samples: 100
@@ -49,6 +49,6 @@ gradient_accumulation_steps: 1
 resume_from_checkpoint: false
 
 project_dir: ""
-results_dir: ${oc.env:IRASIM_CHECKPOINT_ROOT,'~/.cache/anygoal/checkpoints'}
+results_dir: ${oc.env:IRASIM_CHECKPOINT_ROOT,${anygoal.path:checkpoints}}
 vae_model_path: ${oc.env:IRASIM_VAE_PATH,stabilityai/stable-diffusion-xl-base-1.0}
-scheduler_path: ${oc.env:IRASIM_SCHEDULER_PATH,'~/.cache/anygoal/sources/IRASim/pretrained_models/scheduler'}
+scheduler_path: ${oc.env:IRASIM_SCHEDULER_PATH,${anygoal.path:sources}/IRASim/pretrained_models/scheduler}

@@ -237,6 +237,7 @@ models:
     planner_config_style: hydra
     planner_seed_style: override
     planning_checkpoint_key: model.checkpoint_path
+    planning_training_config_key: model.config_path
   toy-action-duplicate:
     aliases: [action_duplicate, action_duplicated_predictor]
     capabilities: [train, rollout, plan]
@@ -255,6 +256,7 @@ models:
     planner_config_style: hydra
     planner_seed_style: override
     planning_checkpoint_key: model.checkpoint_path
+    planning_training_config_key: model.config_path
   toy-driftworld:
     aliases: [toy_driftworld]
     capabilities: [train, rollout, plan]
@@ -273,5 +275,6 @@ models:
     planner_config_style: hydra
     planner_seed_style: override
     planning_checkpoint_key: model.checkpoint_path
+    planning_training_config_key: model.config_path
 
 visualizers: {}

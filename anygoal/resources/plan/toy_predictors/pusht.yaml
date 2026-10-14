@@ -46,7 +46,7 @@ output:
   video: true
   save_video: false
   success_criterion: null
-  gif_directory: outputs/toy_planning_rollouts
+  gif_directory: ${anygoal.path:outputs}/toy_planning_rollouts
 
 cache_dir: null
 

@@ -10,6 +10,7 @@ from pathlib import Path
 import h5py
 from omegaconf import DictConfig, OmegaConf
 
+from anygoal.paths import dataset_file
 from anygoal.wm.irasim import (  # noqa: E402
     create_irasim_transformer,
     get_irasim_hdf5_datasets,
@@ -44,10 +45,7 @@ def load_config(path: Path, overrides: list[str]) -> DictConfig:
 
 
 def dataset_path(cfg: DictConfig) -> Path:
-    name = Path(str(cfg.h5_dataset_name)).expanduser()
-    if name.is_absolute():
-        return name if name.suffix else name.with_suffix(".h5")
-    return Path(cfg.h5_dataset_root).expanduser() / "datasets" / f"{name}.h5"
+    return dataset_file(str(cfg.h5_dataset_name), root=cfg.h5_dataset_root)
 
 
 def validate_config(cfg: DictConfig) -> Path:

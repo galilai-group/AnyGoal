@@ -20,7 +20,7 @@ variant: rgb_action
 policy: insert_peg/prejepa_rgb_action
 preflight: false
 model:
-  checkpoint: ~/.stable_worldmodel/anygoal/prejepa_insertpeg.pt
+  checkpoint: ${anygoal.path:checkpoints}/prejepa_insertpeg.pt
   config: resource:eval/training/prejepa/insert_peg.json
 
 plan_config:
@@ -43,5 +43,5 @@ eval:
         goal_state: {value: goal_observation}
 
 output:
-  directory: outputs/planning_insert_peg_20260911/prejepa/seed_${seed}
+  directory: ${anygoal.path:outputs}/planning_insert_peg_20260911/prejepa/seed_${seed}
   filename: results.txt

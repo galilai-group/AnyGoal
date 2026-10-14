@@ -29,7 +29,7 @@ from anygoal.envs.insert_peg.env import (
     add_insert_peg_evaluation_metrics,
 )
 from anygoal._planning_artifacts import PlanningArtifactRecorder
-from anygoal.paths import resolve_path
+from anygoal.paths import dataset_file, resolve_path
 from anygoal.sources import source_path
 
 
@@ -216,10 +216,7 @@ def resolve_run_directory(cfg: DictConfig, seed: int) -> Path:
 
 
 def dataset_path(cfg: DictConfig) -> Path:
-    dataset_name = Path(str(cfg.eval.dataset_name)).expanduser()
-    if dataset_name.is_absolute():
-        return dataset_name if dataset_name.suffix else dataset_name.with_suffix(".h5")
-    return Path(cfg.dataset.root).expanduser() / "datasets" / f"{dataset_name}.h5"
+    return dataset_file(str(cfg.eval.dataset_name), root=cfg.dataset.root)
 
 
 def required_paths(cfg: DictConfig, seed: int) -> list[Path]:

@@ -17,9 +17,9 @@ dataset:
 
 seed: 0
 policy: insert_peg/lewm
-model_source_root: ${oc.env:LEWM_SOURCE_ROOT,'~/.cache/anygoal/sources/lewm'}
+model_source_root: ${oc.env:LEWM_SOURCE_ROOT,${anygoal.path:sources}/lewm}
 model:
-  checkpoint: ~/.stable_worldmodel/anygoal/lewm_insertpeg.pt
+  checkpoint: ${anygoal.path:checkpoints}/lewm_insertpeg.pt
   encoder_scale: tiny
   patch_size: 14
   embed_dim: 192
@@ -53,5 +53,5 @@ eval:
         goal_state: {value: goal_observation}
 
 output:
-  directory: outputs/planning_insert_peg_20260911/lewm/seed_${seed}
+  directory: ${anygoal.path:outputs}/planning_insert_peg_20260911/lewm/seed_${seed}
   filename: results.txt

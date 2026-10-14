@@ -19,7 +19,7 @@ from anygoal.evaluation._rollout_adapters import (
     TrueStateRolloutAdapter,
     imagenet_preprocess,
 )
-from anygoal.paths import resolve_path
+from anygoal.paths import dataset_file, resolve_path
 from anygoal.resources import resource_path
 from anygoal.sources import source_path
 
@@ -296,8 +296,7 @@ def build_adapter(
         stats_dataset = dataset
         if stats_name:
             stats_dataset = swm.data.HDF5Dataset(
-                str(stats_name),
-                cache_dir=Path(cfg.dataset.root).expanduser(),
+                path=dataset_file(str(stats_name), root=cfg.dataset.root),
                 keys_to_cache=["action"],
             )
         irasim_action_processor = IRASimActionProcessor.fit(

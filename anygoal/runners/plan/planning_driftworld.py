@@ -16,6 +16,7 @@ import torch
 from omegaconf import DictConfig, OmegaConf
 
 import anygoal  # noqa: E402,F401
+from anygoal.paths import dataset_file
 from anygoal.resources import resource_path
 from anygoal.envs.cube_hop.env import (  # noqa: E402
     add_cube_evaluation_metrics,
@@ -50,10 +51,7 @@ def load_config(path: Path, overrides: list[str]) -> DictConfig:
 
 
 def dataset_path(cfg: DictConfig) -> Path:
-    name = Path(str(cfg.eval.dataset_name)).expanduser()
-    if name.is_absolute():
-        return name if name.suffix else name.with_suffix(".h5")
-    return Path(cfg.dataset.root).expanduser() / "datasets" / f"{name}.h5"
+    return dataset_file(str(cfg.eval.dataset_name), root=cfg.dataset.root)
 
 
 def validate_config(cfg: DictConfig) -> None:

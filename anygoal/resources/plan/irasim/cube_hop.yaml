@@ -1,8 +1,8 @@
 model:
-  checkpoint: ~/.stable_worldmodel/anygoal/irasim_cube.pt
+  checkpoint: ${anygoal.path:checkpoints}/irasim_cube.pt
   vae_model_path: stabilityai/stable-diffusion-xl-base-1.0
   vae_subfolder: vae
-  scheduler_path: ~/.cache/anygoal/sources/IRASim/pretrained_models/scheduler
+  scheduler_path: ${anygoal.path:sources}/IRASim/pretrained_models/scheduler
   beta_start: 0.0001
   beta_end: 0.02
   beta_schedule: linear
@@ -17,7 +17,7 @@ model:
   cost_type: pixel_mse
 
 dataset:
-  root: ~/.stable_worldmodel
+  root: ${anygoal.path:data}
   keys_to_cache: [action]
 
 world:
@@ -62,4 +62,4 @@ eval:
         effector_yaw: {value: goal_proprio_effector_yaw}
         cube_pos: {value: goal_privileged_block_0_pos}
 
-output: {directory: outputs/irasim/cube_hop, save_video: false}
+output: {directory: "${anygoal.path:outputs}/irasim/cube_hop", save_video: false}

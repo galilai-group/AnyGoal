@@ -1,8 +1,8 @@
 model:
-  checkpoint: ${oc.env:IRASIM_CHECKPOINT,'~/.stable_worldmodel/anygoal/irasim_pusht.pt'}
+  checkpoint: ${oc.env:IRASIM_CHECKPOINT,${anygoal.path:checkpoints}/irasim_pusht.pt}
   vae_model_path: ${oc.env:IRASIM_VAE_PATH,stabilityai/stable-diffusion-xl-base-1.0}
   vae_subfolder: vae
-  scheduler_path: ${oc.env:IRASIM_SCHEDULER_PATH,'~/.cache/anygoal/sources/IRASim/pretrained_models/scheduler'}
+  scheduler_path: ${oc.env:IRASIM_SCHEDULER_PATH,${anygoal.path:sources}/IRASim/pretrained_models/scheduler}
   beta_start: 0.0001
   beta_end: 0.02
   beta_schedule: linear
@@ -17,7 +17,7 @@ model:
   cost_type: pixel_mse
 
 dataset:
-  root: ${oc.env:IRASIM_DATA_ROOT,'~/.stable_worldmodel'}
+  root: ${anygoal.path:data}
   keys_to_cache: [action, proprio, state]
 
 world:
@@ -61,5 +61,5 @@ eval:
           value: goal_state
 
 output:
-  directory: ${oc.env:IRASIM_OUTPUT_ROOT,outputs/irasim}/pusht
+  directory: ${oc.env:IRASIM_OUTPUT_ROOT,${anygoal.path:outputs}/irasim}/pusht
   save_video: false

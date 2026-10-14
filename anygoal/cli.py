@@ -17,6 +17,7 @@ import yaml
 from anygoal.config import load_config
 from anygoal.collection import collect_from_cli
 from anygoal.datasets.validation import validate_hdf5
+from anygoal.paths import resolve_path
 from anygoal.registry import DatasetSpec, ModelSpec, get_registry
 from anygoal.resources import resource_path
 from anygoal.version import __version__
@@ -124,6 +125,20 @@ def _planning_config(model: ModelSpec, dataset: DatasetSpec) -> Path:
     )
 
 
+def _planning_training_config(
+    model: ModelSpec, dataset: DatasetSpec
+) -> Path | None:
+    if model.planning_training_config_key is None:
+        return None
+    evaluation = yaml.safe_load(
+        resource_path("eval", "rollout.yaml").read_text(encoding="utf-8")
+    )
+    value = evaluation["models"][model.evaluation_id][dataset.family].get(
+        "training_config"
+    )
+    return resolve_path(value).resolve() if value else None
+
+
 def _run_eval(args: argparse.Namespace) -> int:
     registry = get_registry()
     model = registry.model(args.model_id)
@@ -190,6 +205,15 @@ def _run_eval(args: argparse.Namespace) -> int:
                     str(args.checkpoint.expanduser().resolve()),
                 )
             )
+        training_config = _planning_training_config(model, dataset)
+        if training_config is not None:
+            extra.append(
+                _hydra_override(
+                    config,
+                    model.planning_training_config_key,
+                    str(training_config),
+                )
+            )
     command.extend(extra)
     return _execute(command, dry_run=args.dry_run)
 
@@ -244,6 +268,17 @@ def _run_models(args: argparse.Namespace) -> int:
             f"{status.source.id:14} {status.state:10} "
             f"revision={revision} path={status.path}"
         )
+    return 0
+
+
+def _run_config(args: argparse.Namespace) -> int:
+    config = load_config(site=args.site, experiment=args.config)
+    if args.action == "show":
+        print(yaml.safe_dump(config, sort_keys=False))
+        return 0
+    if args.path_name is None:
+        raise ValueError("config path requires a path name.")
+    print(config["paths"][args.path_name])
     return 0
 
 
@@ -350,19 +385,15 @@ def _parser() -> argparse.ArgumentParser:
     config_parser = subparsers.add_parser(
         "config", help="Inspect merged configuration."
     )
-    config_parser.add_argument("action", choices=("show",))
+    config_parser.add_argument("action", choices=("show", "path"))
+    config_parser.add_argument(
+        "path_name",
+        nargs="?",
+        choices=("home", "data", "checkpoints", "outputs", "sources", "cache"),
+    )
     config_parser.add_argument("--site", type=Path)
     config_parser.add_argument("--config", type=Path, help="Experiment config.")
-    config_parser.set_defaults(
-        handler=lambda args: (
-            print(
-                yaml.safe_dump(
-                    load_config(site=args.site, experiment=args.config), sort_keys=False
-                )
-            )
-            or 0
-        )
-    )
+    config_parser.set_defaults(handler=_run_config)
 
     data_parser = subparsers.add_parser("data", help="Validate data.")
     data_subparsers = data_parser.add_subparsers(dest="data_command", required=True)

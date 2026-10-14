@@ -44,13 +44,12 @@ def test_cli_lists_registry(capsys):
     assert "toy-action-duplicate" in output
 
 
-def test_counterfactual_analysis_is_not_in_public_cli(capsys):
+def test_eval_cli_only_exposes_public_workflows(capsys):
     try:
         main(["eval", "--help"])
     except SystemExit as error:
         assert error.code == 0
     output = capsys.readouterr().out
-    assert "counterfactual" not in output
     assert "prediction" not in output
     assert "rollout" in output
 

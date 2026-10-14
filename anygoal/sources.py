@@ -18,6 +18,13 @@ from anygoal.resources import resource_path
 
 
 @dataclass(frozen=True)
+class NestedSourceSpec:
+    repository: str
+    revision: str
+    directory: str
+
+
+@dataclass(frozen=True)
 class SourceSpec:
     id: str
     repository: str
@@ -26,6 +33,7 @@ class SourceSpec:
     environment: str
     marker: str
     aliases: tuple[str, ...] = ()
+    nested_sources: tuple[NestedSourceSpec, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -52,6 +60,14 @@ def get_sources() -> Mapping[str, SourceSpec]:
             environment=str(raw["environment"]),
             marker=str(raw["marker"]),
             aliases=tuple(raw.get("aliases", ())),
+            nested_sources=tuple(
+                NestedSourceSpec(
+                    repository=str(nested["repository"]),
+                    revision=str(nested["revision"]),
+                    directory=str(nested["directory"]),
+                )
+                for nested in raw.get("nested_sources", ())
+            ),
         )
         specs[source_id] = spec
         for alias in spec.aliases:
@@ -152,6 +168,30 @@ def install_source(name: str) -> SourceStatus:
             ["git", "-C", str(temporary), "checkout", "--detach", spec.revision],
             check=True,
         )
+        for nested in spec.nested_sources:
+            nested_destination = temporary / nested.directory
+            subprocess.run(
+                [
+                    "git",
+                    "clone",
+                    "--filter=blob:none",
+                    "--no-checkout",
+                    nested.repository,
+                    str(nested_destination),
+                ],
+                check=True,
+            )
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(nested_destination),
+                    "checkout",
+                    "--detach",
+                    nested.revision,
+                ],
+                check=True,
+            )
         temporary.rename(destination)
     except subprocess.CalledProcessError as error:
         shutil.rmtree(temporary, ignore_errors=True)
@@ -166,6 +206,7 @@ def install_source(name: str) -> SourceStatus:
 
 __all__ = [
     "SourceSpec",
+    "NestedSourceSpec",
     "SourceStatus",
     "get_source",
     "get_sources",

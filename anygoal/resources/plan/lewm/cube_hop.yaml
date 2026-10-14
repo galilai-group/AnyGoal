@@ -25,9 +25,9 @@ dataset:
 
 seed: 0
 policy: cube/lewm # ckpt name or random
-model_source_root: ${oc.env:LEWM_SOURCE_ROOT,'~/.cache/anygoal/sources/lewm'}
+model_source_root: ${oc.env:LEWM_SOURCE_ROOT,${anygoal.path:sources}/lewm}
 model:
-  checkpoint: ~/.stable_worldmodel/anygoal/lewm_cube.ckpt
+  checkpoint: ${anygoal.path:checkpoints}/lewm_cube.ckpt
   encoder_scale: tiny
   patch_size: 14
   embed_dim: 192
@@ -72,5 +72,5 @@ eval:
           value: goal_privileged_block_0_pos
 
 output:
-  directory: outputs/cube_hop/lewm/seed_${seed}
+  directory: ${anygoal.path:outputs}/cube_hop/lewm/seed_${seed}
   filename: cube_hop_lewm_results.txt

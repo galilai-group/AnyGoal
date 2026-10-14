@@ -20,6 +20,7 @@ import torch
 from omegaconf import OmegaConf
 
 from anygoal.datasets.validation import validate_hdf5
+from anygoal.paths import anygoal_home, checkpoint_root
 from anygoal.registry import DatasetSpec, ModelSpec, get_registry
 from anygoal.resources import resource_path
 from anygoal.sources import source_path
@@ -255,10 +256,7 @@ def _format_override(key: str, value: Any) -> str:
 
 def _default_output_root(model_id: str, config: Path | None) -> Path:
     if model_id in {"lewm", "prejepa"}:
-        stablewm_home = Path(
-            os.environ.get("STABLEWM_HOME", "~/.stable_worldmodel")
-        ).expanduser()
-        return (stablewm_home / "checkpoints").resolve()
+        return checkpoint_root().resolve()
     if config is not None:
         cfg = OmegaConf.load(config)
         candidates = {
@@ -275,7 +273,7 @@ def _default_output_root(model_id: str, config: Path | None) -> Path:
                 return Path(str(value)).expanduser().resolve()
             except TypeError:
                 pass
-    return Path("~/.cache/anygoal/checkpoints").expanduser().resolve()
+    return checkpoint_root().resolve()
 
 
 def prepare_training(
@@ -405,9 +403,7 @@ def prepare_training(
         stablewm_home = (
             Path(output_dir).expanduser().resolve()
             if output_dir is not None
-            else Path(os.environ.get("STABLEWM_HOME", "~/.stable_worldmodel"))
-            .expanduser()
-            .resolve()
+            else anygoal_home().resolve()
         )
         environment = (("STABLEWM_HOME", str(stablewm_home)),)
         output_root = stablewm_home / "checkpoints"

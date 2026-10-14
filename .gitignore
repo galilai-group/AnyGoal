@@ -8,3 +8,4 @@ log_slurm/*
 wandb
 outputs
 AGENTS.md
+tmp/*

@@ -54,5 +54,5 @@ eval:
           value: goal_privileged_block_0_quat
 
 output:
-  directory: outputs/cube/prejepa_noprop/seed_${seed}
+  directory: ${anygoal.path:outputs}/cube/prejepa_noprop/seed_${seed}
   filename: cube_prejepa_noprop_results.txt

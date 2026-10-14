@@ -1,9 +1,4 @@
 schema_version: 1
-paths:
-  data: ${ANYGOAL_DATA_ROOT:-~/.stable_worldmodel/datasets}
-  checkpoints: ${ANYGOAL_CHECKPOINT_ROOT:-~/.cache/anygoal/checkpoints}
-  outputs: ${ANYGOAL_OUTPUT_ROOT:-./outputs}
-  sources: ${ANYGOAL_SOURCE_ROOT:-~/.cache/anygoal/sources}
 wandb:
   enabled: false
   entity: null

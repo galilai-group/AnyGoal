@@ -26,6 +26,7 @@ import anygoal  # noqa: E402,F401
 import anygoal.datasets as anygoal_datasets  # noqa: E402
 import anygoal.wm as anygoal_wm  # noqa: E402
 import anygoal.wm.toy_predictors as anygoal_toy_predictors  # noqa: E402
+from anygoal.paths import data_root  # noqa: E402
 
 # Historical checkpoints store Hydra targets under the pre-release package name.
 sys.modules.setdefault("unstable_worldmodel", anygoal)
@@ -58,14 +59,11 @@ def get_episodes_length(dataset, episodes) -> np.ndarray:
 
 
 def get_dataset(cfg: DictConfig):
-    cache_directory = Path(
-        cfg.cache_dir or swm.data.utils.get_cache_dir()
-    ).expanduser()
     dataset_name = Path(str(cfg.eval.dataset_name)).expanduser()
     dataset_path = (
         dataset_name
         if dataset_name.is_absolute()
-        else cache_directory / "datasets" / dataset_name
+        else data_root() / dataset_name
     )
     if not dataset_path.suffix:
         dataset_path = dataset_path.with_suffix(".h5")

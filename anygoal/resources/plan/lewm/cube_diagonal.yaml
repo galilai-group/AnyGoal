@@ -25,8 +25,8 @@ dataset:
 seed: 0
 policy: cube/lewm
 model:
-  checkpoint: ~/.stable_worldmodel/anygoal/lewm_cube.ckpt
-model_source_root: ${oc.env:LEWM_SOURCE_ROOT,'~/.cache/anygoal/sources/lewm'}
+  checkpoint: ${anygoal.path:checkpoints}/lewm_cube.ckpt
+model_source_root: ${oc.env:LEWM_SOURCE_ROOT,${anygoal.path:sources}/lewm}
 plan_config: {horizon: 5, receding_horizon: 5, action_block: 5}
 
 eval:
@@ -47,5 +47,5 @@ eval:
         cube_pos: {value: goal_privileged_block_0_pos}
 
 output:
-  directory: outputs/planning_cube_diagonal/lewm/seed_${seed}
+  directory: ${anygoal.path:outputs}/planning_cube_diagonal/lewm/seed_${seed}
   filename: cube_diagonal_lewm_results.txt

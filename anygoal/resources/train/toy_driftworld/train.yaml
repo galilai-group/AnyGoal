@@ -32,7 +32,7 @@ train:
   checkpoint_every_steps: null
 
 output:
-  checkpoint_root: ~/.cache/anygoal/checkpoints/toy_driftworld
+  checkpoint_root: ${anygoal.path:checkpoints}/toy_driftworld
   description: ${data.name}_${model.name}
 
 wandb:

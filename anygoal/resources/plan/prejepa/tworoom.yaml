@@ -15,7 +15,7 @@ dataset:
 seed: 0
 variant: dinowm_noprop
 policy: anygoal/prejepa_tworoom
-cache_dir: ~/.stable_worldmodel
+cache_dir: ${anygoal.path:checkpoints}
 preflight: false
 
 plan_config:
@@ -43,5 +43,5 @@ eval:
           value: goal_proprio
 
 output:
-  directory: outputs/planning_tworoom/prejepa/seed_${seed}
+  directory: ${anygoal.path:outputs}/planning_tworoom/prejepa/seed_${seed}
   filename: tworoom_prejepa_results.txt

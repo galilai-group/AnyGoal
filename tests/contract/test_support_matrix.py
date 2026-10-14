@@ -56,6 +56,33 @@ def test_cli_has_a_dispatch_path_for_every_evaluation_combination(
 
 
 @pytest.mark.parametrize(
+    "model_id",
+    ("toy-adaln", "toy-action-duplicate", "toy-driftworld"),
+)
+def test_toy_planning_cli_supplies_packaged_training_config(capsys, model_id):
+    assert (
+        main(
+            [
+                "eval",
+                "planning",
+                "--model",
+                model_id,
+                "--dataset",
+                "extractpeg",
+                "--checkpoint",
+                "/tmp/model.pt",
+                "--dry-run",
+            ]
+        )
+        == 0
+    )
+    command = capsys.readouterr().out
+    assert "model.config_path=" in command
+    assert "/eval/training/toy/" in command
+    assert "/insertpeg.yaml" in command
+
+
+@pytest.mark.parametrize(
     ("model_id", "dataset_id"), TRAINING_CASES, ids=map(case_id, TRAINING_CASES)
 )
 def test_api_prepares_every_supported_training_combination(

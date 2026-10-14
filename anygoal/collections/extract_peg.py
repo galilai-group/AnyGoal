@@ -15,7 +15,7 @@ from anygoal.datasets.insert_peg.support import (
     load_reference,
     write_variant_dataset,
 )
-from anygoal.paths import data_root
+from anygoal.paths import cache_root, data_root
 
 os.environ.setdefault("MUJOCO_GL", "osmesa")
 
@@ -23,11 +23,10 @@ os.environ.setdefault("MUJOCO_GL", "osmesa")
 DEFAULT_REFERENCE = data_root() / "manipulator_insert_peg_weak_expert_train.h5"
 DEFAULT_OUTPUT = data_root() / "extract_peg_test.h5"
 DEFAULT_SUPPORT_CACHE = (
-    Path(
-        os.environ.get("ANYGOAL_SUPPORT_CACHE_ROOT", "~/.cache/anygoal/support")
-    ).expanduser()
-    / "extract_peg_support_v1.npz"
-)
+    Path(os.environ["ANYGOAL_SUPPORT_CACHE_ROOT"]).expanduser()
+    if "ANYGOAL_SUPPORT_CACHE_ROOT" in os.environ
+    else cache_root() / "support"
+) / "extract_peg_support_v1.npz"
 
 
 def _sample_triangle(rng, vertices):

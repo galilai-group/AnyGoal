@@ -18,6 +18,7 @@ import torch
 import torch.distributed as dist
 from omegaconf import DictConfig, OmegaConf
 
+from anygoal.paths import dataset_file
 from anygoal.wm.driftworld import (  # noqa: E402
     create_driftworld_denoiser,
     driftworld_source_root,
@@ -142,15 +143,7 @@ def validate_config(cfg: DictConfig) -> Path:
                 "train.max_steps must be non-negative and divisible by "
                 "train.ckpt_every so the terminal checkpoint is saved."
             )
-    dataset_name = Path(str(cfg.data.dataset_name)).expanduser()
-    if dataset_name.is_absolute():
-        dataset_path = (
-            dataset_name if dataset_name.suffix else dataset_name.with_suffix(".h5")
-        )
-    else:
-        dataset_path = (
-            Path(cfg.data.dataset_root).expanduser() / "datasets" / f"{dataset_name}.h5"
-        )
+    dataset_path = dataset_file(str(cfg.data.dataset_name), root=cfg.data.dataset_root)
     if not dataset_path.is_file():
         raise FileNotFoundError(f"StableWM H5 file not found: {dataset_path}")
     return dataset_path

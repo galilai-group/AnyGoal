@@ -42,5 +42,5 @@ eval:
           value: goal_state
 
 output:
-  directory: outputs/prejepa/${variant}/stackt/seed_${seed}
+  directory: ${anygoal.path:outputs}/prejepa/${variant}/stackt/seed_${seed}
   filename: stackt_prejepa_results.txt

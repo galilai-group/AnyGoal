@@ -14,6 +14,7 @@ import stable_worldmodel as swm
 import torch
 from omegaconf import DictConfig, OmegaConf
 
+from anygoal.paths import checkpoint_root as default_checkpoint_root
 from anygoal.paths import resolve_path
 
 from .planning import evaluate
@@ -103,7 +104,7 @@ def jsonable(value):
 
 
 def checkpoint_summary(cfg: DictConfig) -> dict:
-    checkpoint_root = cfg.cache_dir or swm.data.utils.get_cache_dir()
+    checkpoint_root = cfg.get("cache_dir") or default_checkpoint_root()
     model = load_prejepa_cost_model(cfg, checkpoint_root)
     return {
         "policy": cfg.policy,
