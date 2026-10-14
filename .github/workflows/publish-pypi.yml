@@ -49,10 +49,10 @@ jobs:
           test "$(python -c 'import runpy; print(runpy.run_path("anygoal/version.py")["__version__"])')" = "${EXPECTED_VERSION}"
       - name: Build and check distributions
         run: |
-          uv venv .release-venv
-          uv pip install --python .release-venv/bin/python build twine
-          .release-venv/bin/python -m build
-          .release-venv/bin/python -m twine check dist/*
+          uv venv "${RUNNER_TEMP}/release-venv"
+          uv pip install --python "${RUNNER_TEMP}/release-venv/bin/python" build twine
+          "${RUNNER_TEMP}/release-venv/bin/python" -m build
+          "${RUNNER_TEMP}/release-venv/bin/python" -m twine check dist/*
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: python-package-distributions
