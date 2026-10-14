@@ -10,23 +10,22 @@ trap 'rm -rf "${work_dir}"' EXIT
 uv venv --python "${PYTHON:-python}" "${work_dir}/venv"
 case "${index}" in
     testpypi)
-        index_args=(
-            --index https://test.pypi.org/simple
-            --default-index https://pypi.org/simple
-            --index-strategy unsafe-best-match
+        uv pip install --python "${work_dir}/venv/bin/python" \
+            --index https://test.pypi.org/simple --no-deps "anygoal==${version}"
+        mapfile -t requirements < <(
+            "${work_dir}/venv/bin/python" -c \
+                'from importlib.metadata import requires; print(*requires("anygoal") or (), sep="\n")'
         )
+        uv pip install --python "${work_dir}/venv/bin/python" "${requirements[@]}"
         ;;
     pypi)
-        index_args=()
+        uv pip install --python "${work_dir}/venv/bin/python" "anygoal==${version}"
         ;;
     *)
         echo "index must be testpypi or pypi" >&2
         exit 2
         ;;
 esac
-
-uv pip install --python "${work_dir}/venv/bin/python" \
-    "${index_args[@]}" "anygoal==${version}"
 uv pip check --python "${work_dir}/venv/bin/python"
 
 cd "${work_dir}"
