@@ -1,0 +1,87 @@
+name: Publish to TestPyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to publish and verify
+        required: true
+        default: 0.1.0b1
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.13.1"
+          enable-cache: true
+      - name: Validate version
+        env:
+          EXPECTED_VERSION: ${{ inputs.version }}
+        run: |
+          actual_version="$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+          test "${actual_version}" = "${EXPECTED_VERSION}"
+          test "$(python -c 'import runpy; print(runpy.run_path("anygoal/version.py")["__version__"])')" = "${EXPECTED_VERSION}"
+      - name: Build and check distributions
+        run: |
+          uv venv .release-venv
+          uv pip install --python .release-venv/bin/python build twine
+          .release-venv/bin/python -m build
+          .release-venv/bin/python -m twine check dist/*
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/anygoal
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: python-package-distributions
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@a892a5a61159132606e93a2fa6f4358831b04d26 # v1.14.2
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  smoke-test:
+    needs: publish
+    runs-on: ubuntu-24.04
+    env:
+      UV_TORCH_BACKEND: cpu
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.13.1"
+          enable-cache: true
+      - name: Install from TestPyPI and smoke test
+        env:
+          PACKAGE_VERSION: ${{ inputs.version }}
+        run: |
+          for attempt in {1..12}; do
+            bash scripts/smoke_test_published.sh testpypi "${PACKAGE_VERSION}" && exit 0
+            sleep 15
+          done
+          exit 1
