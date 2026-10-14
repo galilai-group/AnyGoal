@@ -13,6 +13,7 @@ case "${index}" in
         index_args=(
             --index https://test.pypi.org/simple
             --default-index https://pypi.org/simple
+            --index-strategy unsafe-best-match
         )
         ;;
     pypi)
