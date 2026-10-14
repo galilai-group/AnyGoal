@@ -1,12 +1,18 @@
 [project]
 name = "anygoal"
-version = "0.1.0"
+version = "0.1.0b1"
 description = "Benchmarking state-action recombination in world models"
 readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "docs/NOTICE", "docs/THIRD_PARTY_NOTICES.md"]
 requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+]
 
 dependencies = [
-    "stable-worldmodel[env,format]>=0.1.1,<0.2.0",
+    "stable-worldmodel[env]>=0.1.1,<0.2.0",
     "h5py",
     "hdf5plugin",
     "huggingface-hub>=0.34,<2",
@@ -14,12 +20,16 @@ dependencies = [
     "scipy",
     "tqdm",
     "PyYAML>=6",
-    "imageio>=2.31",
+    "imageio[ffmpeg]>=2.31",
     "Pillow",
 ]
 
 [project.scripts]
 anygoal = "anygoal.cli:main"
+
+[project.urls]
+Repository = "https://github.com/galilai-group/AnyGoal"
+Issues = "https://github.com/galilai-group/AnyGoal/issues"
 
 [project.optional-dependencies]
 data = []
@@ -34,7 +44,7 @@ eval = [
 ]
 
 all = [
-    "stable-worldmodel[train,env,format]>=0.1.1,<0.2.0",
+    "stable-worldmodel[train,env]>=0.1.1,<0.2.0",
     "accelerate>=1.15,<2",
     "diffusers>=0.39,<0.40",
     "hydra-core>=1.3,<2",
