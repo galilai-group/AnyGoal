@@ -231,6 +231,21 @@ def _validate_options(episodes: int, output: Path, overwrite: bool) -> None:
         raise FileExistsError(f"Refusing to overwrite {output}")
 
 
+def _trim_episode_prefix(rollout: dict[str, np.ndarray], fraction: float):
+    """Remove the first floor(fraction * steps) transitions from a rollout."""
+    action_count = len(rollout["actions"])
+    if len(rollout["states"]) != action_count + 1:
+        raise ValueError("Extract-Peg rollout states/actions are misaligned")
+    removed = int(np.floor(action_count * fraction))
+    trimmed = {}
+    for name, values in rollout.items():
+        expected = action_count + 1 if name == "states" else action_count
+        if len(values) != expected:
+            raise ValueError(f"Extract-Peg rollout {name} has an unexpected length")
+        trimmed[name] = values[removed:]
+    return trimmed, removed
+
+
 def collect_dataset(
     *,
     reference: Path = DEFAULT_REFERENCE,
@@ -241,11 +256,14 @@ def collect_dataset(
     support_cache: Path = DEFAULT_SUPPORT_CACHE,
     skip_pixels: bool = False,
     overwrite: bool = False,
+    trim_fraction: float = 0.4,
 ) -> Path:
     from anygoal.envs.extract_peg import env as extract_peg_env
     from anygoal.envs.extract_peg import policy as extract_peg_policy
 
     _validate_options(episodes, output, overwrite)
+    if not 0.0 <= trim_fraction < 1.0:
+        raise ValueError("--trim-fraction must be in [0, 1)")
     _, reference_features = load_reference(reference)
     anchors = _load_reverse_insertion_anchors(reference)
     support = ReferenceSupport(reference_features, support_cache)
@@ -301,6 +319,13 @@ def collect_dataset(
             raise RuntimeError(
                 f"Collected {len(accepted)}/{episodes} episodes in {attempts} attempts"
             )
+        original_lengths = [len(item["actions"]) for item in accepted]
+        trimmed_with_counts = [
+            _trim_episode_prefix(item, trim_fraction) for item in accepted
+        ]
+        accepted = [item for item, _ in trimmed_with_counts]
+        removed_lengths = [removed for _, removed in trimmed_with_counts]
+        trimmed_lengths = [len(item["actions"]) for item in accepted]
         distribution = audit_support(
             reference_features,
             np.concatenate([item["states"][:-1] for item in accepted]),
@@ -314,6 +339,13 @@ def collect_dataset(
                     "right_episodes": episodes // 2,
                     "attempts": attempts,
                     "episode_metrics": reports,
+                    "trim_fraction": trim_fraction,
+                    "trim_rounding": "floor",
+                    "episode_lengths_before_trim": original_lengths,
+                    "removed_prefix_lengths": removed_lengths,
+                    "episode_lengths_after_trim": trimmed_lengths,
+                    "transitions_before_trim": int(sum(original_lengths)),
+                    "transitions_after_trim": int(sum(trimmed_lengths)),
                     "distribution_support_pre_save": distribution,
                 },
                 indent=2,
@@ -329,6 +361,10 @@ def collect_dataset(
                 "reference": str(reference.resolve()),
                 "seed": seed,
                 "max_episode_length": 1000,
+                "trimmed_episode_prefix_fraction": trim_fraction,
+                "trim_rounding": "floor",
+                "original_transition_count": int(sum(original_lengths)),
+                "trimmed_transition_count": int(sum(trimmed_lengths)),
             },
             include_pixels=not skip_pixels,
             env=env,

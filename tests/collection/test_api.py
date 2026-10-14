@@ -8,6 +8,7 @@ import pytest
 
 from anygoal import collection
 from anygoal.collections.cube_diagonal import collect_dataset as collect_cube_diagonal
+from anygoal.collections.extract_peg import _trim_episode_prefix
 from anygoal.datasets.insert_peg.support import write_variant_dataset
 from anygoal.envs.insert_peg import env as insert_peg_env
 from anygoal.paths import data_root
@@ -179,3 +180,34 @@ def test_insert_peg_variant_writer_preserves_canonical_schema(tmp_path):
             np.testing.assert_array_equal(
                 dataset[name][:], expected_observation[:, columns]
             )
+
+
+def test_extract_peg_trimming_removes_each_episode_prefix():
+    rollout = {
+        "states": np.arange(11 * 2).reshape(11, 2),
+        "actions": np.arange(10 * 5).reshape(10, 5),
+        "state_support": np.arange(10),
+        "action_support": np.arange(10) + 10,
+        "floor_clearance": np.arange(10) + 20,
+        "target_contacts": np.arange(10) + 30,
+    }
+
+    trimmed, removed = _trim_episode_prefix(rollout, 0.4)
+
+    assert removed == 4
+    np.testing.assert_array_equal(trimmed["states"], rollout["states"][4:])
+    for name in rollout.keys() - {"states"}:
+        np.testing.assert_array_equal(trimmed[name], rollout[name][4:])
+    assert len(trimmed["states"]) == len(trimmed["actions"]) + 1
+
+
+def test_extract_peg_trimming_uses_floor_rounding():
+    rollout = {
+        "states": np.zeros((9, 44)),
+        "actions": np.zeros((8, 5)),
+    }
+
+    trimmed, removed = _trim_episode_prefix(rollout, 0.4)
+
+    assert removed == 3
+    assert len(trimmed["actions"]) == 5

@@ -1,5 +1,11 @@
 # AnyGoal
 
+> **Beta Release**
+>
+> AnyGoal Pypi is currently in beta.
+>
+> We welcome feedback, bug reports, and feature requests through GitHub Issues.
+
 AnyGoal is an installable benchmark API for collecting out-of-distribution
 control datasets and evaluating world models through rollout error,
 and planning. It extends
@@ -8,16 +14,19 @@ keeps the original model implementations and numerical protocols intact.
 
 ## Installation
 
-Python 3.10, Cuda 12.8
+AnyGoal supports Python 3.10 and newer. The basic API and CLI do not require a
+GPU. Training and GPU-backed evaluation require a PyTorch installation that is
+compatible with the host's accelerator and driver.
 
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) first.
 For a source checkout that can run the full research code without inheriting
 packages from another Python or Conda environment, create an isolated virtual
 environment and install the pinned repository requirements:
 
 ```bash
-python3.10 -m venv .venv
+uv venv --python 3.10
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+uv pip install -r requirements.txt
 ```
 
 `requirements.txt` includes the CUDA 12.8 PyTorch package index and the exact
@@ -28,16 +37,34 @@ The default install includes dataset I/O, collection, validation, and the
 simulation environments. The explicit `data` extra is an equivalent alias:
 
 ```bash
-pip install anygoal
-pip install 'anygoal[data]'
+uv venv --python 3.10
+source .venv/bin/activate
+uv pip install anygoal
+# Equivalent explicit alias for the default data functionality:
+uv pip install 'anygoal[data]'
+```
+
+A minimal installation check that does not download datasets or checkpoints is:
+
+```python
+import anygoal
+
+registry = anygoal.get_registry()
+print(anygoal.__version__)
+print(registry.dataset("pusht").filename)
+```
+
+```bash
+anygoal --version
+anygoal list datasets
 ```
 
 Add rollout/planning dependencies for evaluation, or install the complete
 training stack:
 
 ```bash
-pip install 'anygoal[eval]'
-pip install 'anygoal[all]'
+uv pip install 'anygoal[eval]'
+uv pip install 'anygoal[all]'
 ```
 
 `eval` includes the default data functionality, and `all` includes data,
@@ -215,10 +242,8 @@ and PreJEPA training on PushT, Cube, or TwoRoom emits a warning because the
 paper used the official released checkpoints for those combinations.
 Evaluation accepts
 `--checkpoint` and `--model-config`.
-The current research
-artifact paths are recorded in the shared workspace inventory at
-`../unstable-worldmodel/checkpoints.md`; public URLs, licenses, and hashes still
-need to be supplied before release.
+The downloadable AnyGoal artifact inventory is recorded in
+[`anygoal/resources/artifacts.yaml`](anygoal/resources/artifacts.yaml).
 
 ## Site and W&B configuration
 
@@ -348,8 +373,30 @@ underscores in Python (for example, `visualization__enabled=False`) or dotted
 
 Third-party packages can register datasets, models, and visualizers through the
 `anygoal.datasets`, `anygoal.models`, and `anygoal.visualizers` entry-point
-groups. Required I/O contracts, artifact metadata, and tests are documented in
-[`CONTRIBUTING.md`](CONTRIBUTING.md).
+groups. Integrations must preserve upstream licenses and attribution, and must
+not redistribute models, datasets, or checkpoints without permission.
+
+## License and attribution
+
+AnyGoal-authored source code and AnyGoal-generated datasets and checkpoints are
+Copyright 2026 Heejeong Nam and licensed under
+[Apache-2.0](LICENSE), unless an artifact is accompanied by different terms.
+
+AnyGoal's wheel does not contain the third-party model repositories or their
+model and dataset artifacts. Those materials remain governed by their original
+licenses, terms, and citation requirements. At the revisions recorded in
+[`anygoal/resources/sources.yaml`](anygoal/resources/sources.yaml), IRASim uses
+Apache-2.0, while LeWM and Sensorimotor World Model use MIT. No repository-level
+license was found for DriftWorld, so its source must not be redistributed or
+relicensed without explicit permission from its copyright holders. Nested
+projects retain their own license notices.
+
+The AnyGoal InsertPeg dataset is a modified derivative of the Apache-2.0
+[OpenDILabCommunity RL Unplugged DM Control Suite dataset](https://huggingface.co/datasets/OpenDILabCommunity/rl_unplugged_dm_control_suite).
+The modification and attribution details are recorded in
+[`docs/THIRD_PARTY_NOTICES.md`](docs/THIRD_PARTY_NOTICES.md). Other external
+datasets and official checkpoints are not redistributed by AnyGoal and remain
+available from their original authors.
 
 ## Development
 
