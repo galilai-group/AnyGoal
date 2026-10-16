@@ -5,10 +5,12 @@ description = "Benchmarking state-action recombination in world models"
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "docs/NOTICE", "docs/THIRD_PARTY_NOTICES.md"]
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.12"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
 
 dependencies = [

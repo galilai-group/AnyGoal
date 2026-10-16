@@ -14,7 +14,7 @@ keeps the original model implementations and numerical protocols intact.
 
 ## Installation
 
-AnyGoal supports Python 3.10 and newer.
+AnyGoal supports Python 3.10 and 3.11.
 
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/) first.
 For a source checkout that can run the full research code without inheriting
