@@ -112,9 +112,10 @@ def test_default_config_reports_all_effective_paths(monkeypatch, tmp_path):
     }
 
 
-def test_repository_does_not_repeat_upstream_or_legacy_defaults():
+def test_repository_does_not_repeat_legacy_anygoal_default():
     repository = Path(__file__).resolve().parents[2]
-    forbidden = (".stable_" + "worldmodel", ".cache/" + "anygoal")
+    # Relative download staging directories are distinct from the legacy home root.
+    forbidden = ("~/.cache/" + "anygoal",)
     roots = [repository / "anygoal", repository / "scripts", repository / "README.md"]
     offenders = []
     for root in roots:

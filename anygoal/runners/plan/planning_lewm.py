@@ -9,27 +9,13 @@ from pathlib import Path
 import hydra
 import stable_pretraining as spt
 import torch
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
 from anygoal.sources import source_path
+from anygoal.wm.lewm_config import resolve_model_config
+from anygoal.wm.checkpoints import compatible_vit_state_dict, remap_legacy_vit_key  # noqa: F401
 
 from .planning import evaluate
-
-
-def remap_legacy_vit_key(key: str) -> str:
-    """Map Transformers 4 ViT state keys to the installed Transformers 5 names."""
-    key = key.replace("encoder.encoder.layer.", "encoder.layers.")
-    replacements = (
-        (".attention.attention.query.", ".attention.q_proj."),
-        (".attention.attention.key.", ".attention.k_proj."),
-        (".attention.attention.value.", ".attention.v_proj."),
-        (".attention.output.dense.", ".attention.o_proj."),
-        (".intermediate.dense.", ".mlp.fc1."),
-        (".output.dense.", ".mlp.fc2."),
-    )
-    for old, new in replacements:
-        key = key.replace(old, new)
-    return key
 
 
 def _source_root(cfg: DictConfig) -> Path:
@@ -42,6 +28,9 @@ def _source_root(cfg: DictConfig) -> Path:
 
 
 def build_lewm(cfg: DictConfig):
+    OmegaConf.update(
+        cfg, "model", resolve_model_config(cfg.model), merge=False, force_add=True
+    )
     source_root = _source_root(cfg)
     sys.path.insert(0, str(source_root))
     try:
@@ -125,12 +114,7 @@ def load_lewm_cost_model(cfg: DictConfig, checkpoint_root: str | Path):
         )
 
     model = build_lewm(cfg)
-    remapped_state = {}
-    for key, value in payload.items():
-        remapped_key = remap_legacy_vit_key(key)
-        if remapped_key in remapped_state:
-            raise KeyError(f"Duplicate remapped state key: {remapped_key}")
-        remapped_state[remapped_key] = value
+    remapped_state = compatible_vit_state_dict(payload, model.state_dict())
     model.load_state_dict(remapped_state, strict=True)
     print(
         f"Loaded state dict {checkpoint_path}: "

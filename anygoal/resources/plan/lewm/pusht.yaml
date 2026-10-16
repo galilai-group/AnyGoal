@@ -16,8 +16,10 @@ dataset:
     - state
 
 seed: 42
-policy: random # ckpt name or random
+policy: random # The public eval CLI selects the requested model unless explicitly overridden.
 model_source_root: ${oc.env:LEWM_SOURCE_ROOT,${anygoal.path:sources}/lewm}
+model:
+  action_dim: 2
 
 plan_config:
   horizon: 5

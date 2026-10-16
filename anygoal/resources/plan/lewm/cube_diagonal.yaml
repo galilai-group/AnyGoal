@@ -25,6 +25,7 @@ dataset:
 seed: 0
 policy: cube/lewm
 model:
+  action_dim: 5
   checkpoint: ${anygoal.path:checkpoints}/lewm_cube.ckpt
 model_source_root: ${oc.env:LEWM_SOURCE_ROOT,${anygoal.path:sources}/lewm}
 plan_config: {horizon: 5, receding_horizon: 5, action_block: 5}

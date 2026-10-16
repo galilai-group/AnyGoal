@@ -76,17 +76,11 @@ def build_adapter(
             planning_config_override or model_cfg.planning_config
         )
         checkpoint = checkpoint_override or resolve_path(model_cfg.checkpoint)
-        if checkpoint.name.endswith("_object.ckpt"):
-            checkpoint_root, policy = _object_checkpoint_location(checkpoint)
-            cfg.policy = policy
-        else:
-            checkpoint_root = checkpoint.parent
-            OmegaConf.update(
-                cfg, "model.checkpoint", str(checkpoint), force_add=True
-            )
-            model_config = OmegaConf.select(cfg, "model.config")
-            if model_config:
-                cfg.model.config = str(resolve_path(model_config))
+        checkpoint_root = checkpoint.parent
+        OmegaConf.update(cfg, "model.checkpoint", str(checkpoint), force_add=True)
+        model_config = OmegaConf.select(cfg, "model.config")
+        if model_config:
+            cfg.model.config = str(resolve_path(model_config))
         patch_transformers_vit_pickle_compat()
         model = load_lewm_cost_model(cfg, checkpoint_root)
         patch_loaded_model_compat(model)
@@ -165,14 +159,10 @@ def build_adapter(
             planning_config_override or model_cfg.planning_config
         )
         checkpoint = checkpoint_override or resolve_path(model_cfg.checkpoint)
-        if checkpoint.name.endswith("_object.ckpt"):
-            checkpoint_root, policy = _object_checkpoint_location(checkpoint)
-            cfg.policy = policy
-        else:
-            checkpoint_root = checkpoint.parent
-            cfg.model.checkpoint = str(checkpoint)
-            if cfg.model.get("config"):
-                cfg.model.config = str(resolve_path(cfg.model.config))
+        checkpoint_root = checkpoint.parent
+        OmegaConf.update(cfg, "model.checkpoint", str(checkpoint), force_add=True)
+        if cfg.model.get("config"):
+            cfg.model.config = str(resolve_path(cfg.model.config))
         patch_transformers_vit_pickle_compat()
         model = load_prejepa_cost_model(cfg, checkpoint_root)
         patch_loaded_model_compat(model)

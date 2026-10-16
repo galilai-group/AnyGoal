@@ -1,6 +1,6 @@
 [project]
 name = "anygoal"
-version = "0.1.0b1"
+version = "0.1.0b2"
 description = "Benchmarking state-action recombination in world models"
 readme = "README.md"
 license = "Apache-2.0"
@@ -16,6 +16,7 @@ dependencies = [
     "h5py",
     "hdf5plugin",
     "huggingface-hub>=0.34,<2",
+    "zstandard>=0.25,<1",
     "numpy",
     "scipy",
     "tqdm",

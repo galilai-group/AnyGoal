@@ -9,6 +9,24 @@ repositories:
     repo_type: model
 
 datasets:
+  pusht:
+    repo_id: quentinll/lewm-pusht
+    repo_type: dataset
+    filename: pusht_expert_train.h5.zst
+    local_filename: pusht_expert_train.h5
+    compression: zstd
+  cube:
+    repo_id: quentinll/lewm-cube
+    repo_type: dataset
+    filename: cube_single_expert.tar.zst
+    local_filename: cube_single_expert.h5
+    compression: tar.zstd
+  tworoom:
+    repo_id: quentinll/lewm-tworooms
+    repo_type: dataset
+    filename: tworoom.tar.zst
+    local_filename: tworoom.h5
+    compression: tar.zstd
   avoidt: avoidt_test.h5
   stackt: stackt_test.h5
   pusht-antigoal: pusht_antigoal_test.h5
@@ -21,6 +39,21 @@ datasets:
 
 checkpoints:
   lewm:
+    pusht:
+      repo_id: quentinll/lewm-pusht
+      repo_type: model
+      filename: weights.pt
+      local_filename: lewm_pusht.ckpt
+    cube:
+      repo_id: quentinll/lewm-cube
+      repo_type: model
+      filename: weights.pt
+      local_filename: lewm_cube.ckpt
+    tworoom:
+      repo_id: quentinll/lewm-tworooms
+      repo_type: model
+      filename: weights.pt
+      local_filename: lewm_tworoom.ckpt
     insert_peg: lewm_insertpeg.pt
   sensorimotor:
     pusht: sensorimotor_pusht.ckpt
@@ -28,6 +61,9 @@ checkpoints:
     tworoom: sensorimotor_tworoom.ckpt
     insert_peg: sensorimotor_insertpeg.ckpt
   prejepa:
+    pusht: prejepa_pusht_object.ckpt
+    cube: prejepa_cube_object.ckpt
+    tworoom: prejepa_tworoom_object.ckpt
     insert_peg: prejepa_insertpeg.pt
   driftworld:
     pusht: driftworld_pusht.pt
@@ -35,6 +71,7 @@ checkpoints:
     tworoom: driftworld_tworoom.pt
     insert_peg: driftworld_insertpeg.pt
   irasim:
+    insert_peg: irasim_insertpeg.pt
     pusht: irasim_pusht.pt
     cube: irasim_cube.pt
     tworoom: irasim_tworoom.pt

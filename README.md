@@ -1,22 +1,20 @@
 # AnyGoal
+## AnyGoal: On World Model Generalization Beyond Expert Rollouts
+by [Heejeong Nam](https://hazel-heejeong-nam.github.io/), [Divyat Mahajan](https://divyat09.github.io/), [Quentin Le Lidec](https://quentinll.github.io/), [Randall Balestriero](https://randallbalestriero.github.io/), [David Klindt](https://scholar.google.de/citations?user=EpT-nUAAAAAJ&hl=en).
 
-> **Beta Release**
->
-> AnyGoal Pypi is currently in beta.
->
-> We welcome feedback, bug reports, and feature requests through GitHub Issues.
 
-AnyGoal is an installable benchmark API for collecting out-of-distribution
-control datasets and evaluating world models through rollout error,
-and planning. It extends
+
+AnyGoal is a benchmark for testing compositional generalization of world models.
+It extends
 [`stable-worldmodel`](https://github.com/galilai-group/stable-worldmodel) and
 keeps the original model implementations and numerical protocols intact.
 
+> `anygoal` PyPI is currently in beta.
+> We welcome feedback, bug reports, and feature requests through GitHub Issues.
+
 ## Installation
 
-AnyGoal supports Python 3.10 and newer. The basic API and CLI do not require a
-GPU. Training and GPU-backed evaluation require a PyTorch installation that is
-compatible with the host's accelerator and driver.
+AnyGoal supports Python 3.10 and newer.
 
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/) first.
 For a source checkout that can run the full research code without inheriting
@@ -24,25 +22,19 @@ packages from another Python or Conda environment, create an isolated virtual
 environment and install the pinned repository requirements:
 
 ```bash
+pip install uv
 uv venv --python 3.10
 source .venv/bin/activate
-uv pip install -r requirements.txt
+uv pip install "anygoal[eval]"
+anygoal --version
 ```
 
-`requirements.txt` includes the CUDA 12.8 PyTorch package index and the exact
-package versions used by this repository. It also installs the current AnyGoal
-source checkout in editable mode after resolving the pinned environment.
 
-The default install includes dataset I/O, collection, validation, and the
-simulation environments. The explicit `data` extra is an equivalent alias:
+>The default install `uv pip install anygoal` includes dataset I/O, collection, validation, and the simulation environments, ***without the rollout and planning evaluation dependencies***. Add them with `anygoal[eval]` or install the complete training stack with `anygoal[all]`.
 
-```bash
-uv venv --python 3.10
-source .venv/bin/activate
-uv pip install anygoal
-# Equivalent explicit alias for the default data functionality:
-uv pip install 'anygoal[data]'
-```
+We provided `requirements.txt` for reference, which includes the CUDA 12.8 PyTorch package index and the exact
+package versions used by this repository.
+
 
 A minimal installation check that does not download datasets or checkpoints is:
 
@@ -59,21 +51,23 @@ anygoal --version
 anygoal list datasets
 ```
 
-Add rollout/planning dependencies for evaluation, or install the complete
-training stack:
 
+## Quick start with the CLI
+
+### 1. Check default paths
+
+Command below prints the default paths for the AnyGoal home directory, data, checkpoints, outputs, sources, and cache:
 ```bash
-uv pip install 'anygoal[eval]'
-uv pip install 'anygoal[all]'
+anygoal config path home
+anygoal config path data
+anygoal config path checkpoints
+anygoal config path outputs
+anygoal config path sources
+anygoal config path cache
 ```
 
-`eval` includes the default data functionality, and `all` includes data,
-evaluation, and training. The wheel contains the public API, CLI, runner
-implementations, and their runtime configurations. It does not redistribute
-third-party model repositories.
-
-## Discover the API
-
+### 2. Check the available datasets, models, and visualizers
+You can check the available datasets, models, and visualizers with the CLI:
 ```bash
 anygoal --help
 anygoal list datasets
@@ -101,16 +95,16 @@ toy-adaln, toy-action-duplicate, toy-driftworld
 ```
 
 
-## Download the original model sources
+### 3. Download the original model sources (code only, no weights)
 
 Evaluation and training integrations use the original upstream repositories.
-Download only the model sources you need; AnyGoal checks out the revisions
-recorded in `anygoal/resources/sources.yaml` under
-`$ANYGOAL_SOURCE_ROOT` (by default `$ANYGOAL_HOME/sources`) and does not run a
-hidden `pip install`:
 
 ```bash
 anygoal models list
+```
+will print the pinned commit for each model. Status `missing` indicates that the source is not yet downloaded. Download the sources for each model with:
+
+```bash
 anygoal models install driftworld
 anygoal models install irasim
 anygoal models install lewm
@@ -119,61 +113,45 @@ anygoal models install sensorimotor
 anygoal models install --all
 ```
 
-The IRASim install also fetches its pinned `pytorch-fid` and `stylegan-v`
-evaluation sources. Upstream stores them as gitlinks without a `.gitmodules`
-file, so AnyGoal resolves them explicitly.
+### 4. Download datasets and checkpoints from Hugging Face
 
-For development, an initialized `worldmodels/` submodule at the pinned commit
-is also recognized. Explicit `DRIFTWORLD_SOURCE_ROOT`, `IRASIM_SOURCE_ROOT`,
-`LEWM_SOURCE_ROOT`, and `SENSORIMOTOR_SOURCE_ROOT` overrides take precedence.
-
-## Data
-
-### Download the published artifacts
-
-The AnyGoal datasets and checkpoints are published in separate Hugging Face
-repositories with the same ID. After authenticating for private repositories,
-download each complete repository directly into the paths used by the bundled
-evaluation configs:
+Let's download `pusht` dataset, `avoidt` dataset, and `lewm` checkpoint for a quick start:
 
 ```bash
-hf auth login
-hf download HazelNam/anygoal --repo-type model \
-  --local-dir "$(anygoal config path checkpoints)"
-hf download HazelNam/anygoal --repo-type dataset \
-  --local-dir "$(anygoal config path data)"
+anygoal artifacts download --model lewm
+anygoal artifacts download --dataset pusht
+anygoal artifacts download --dataset avoidt
 ```
 
-These commands download all artifacts published in the AnyGoal repositories.
-The dataset repository intentionally excludes the upstream PushT, Cube, and
-TwoRoom base datasets, and the model repository intentionally excludes their
-official LeWM and PreJEPA checkpoints. Those upstream artifacts must still be
-downloaded from their original publishers.
-
-The AnyGoal CLI can instead download only the artifacts required by one
-evaluation, download missing artifacts immediately before evaluation, or
-download one complete artifact category:
+You can also download everything with:
 
 ```bash
-anygoal artifacts download --model driftworld --dataset cubehop
-
-anygoal eval planning \
-  --model driftworld --dataset cubehop --download
-
 anygoal artifacts download --checkpoints --all
 anygoal artifacts download --datasets --all
 ```
 
-An evaluation dataset uses the checkpoint trained on its base family; for
-example, `cubehop` resolves to `driftworld_cube.pt`. Existing local files are
-reused.
+### 5. Run a planning evaluation with the downloaded artifacts
 
-Generated variants use their registered in-package collector. Omitted options
-use that dataset's declared defaults, while Python keyword names map directly
-to the corresponding hyphenated CLI options.
-Generated datasets use `ANYGOAL_DATA_ROOT` when set. Otherwise AnyGoal asks
-Stable Worldmodel for its dataset directory, respecting `STABLEWM_HOME` and
-Stable Worldmodel's own default without duplicating that default here.
+```bash
+# plan with a base dataset
+anygoal eval planning --model lewm --dataset pusht --seed 0
+
+# plan with an anygoal dataset
+anygoal eval planning --model lewm --dataset avoidt --seed 0
+
+# rollout with an anygoal dataset
+anygoal eval rollout --model lewm --dataset avoidt --seed 0
+```
+
+Both `eval planning` and `eval rollout` resolve the default local checkpoint from
+the shared artifact catalog using the selected model and the dataset's base family.
+Use `--checkpoint /path/to/weights` to select your own weights, or `--download`
+to fetch missing artifacts. An explicit `--model-config` or Hydra checkpoint
+override keeps control of its own checkpoint. Pass Hydra overrides after `--`,
+for example `-- policy=lewm`; `--policy=lewm` is not an AnyGoal CLI option.
+
+
+## Dataset collection
 
 The Python and terminal interfaces call the same in-package collector:
 
@@ -203,178 +181,39 @@ anygoal data validate "$(anygoal config path data)/pusht_expert_train.h5" \
 ```
 
 Collectors refuse to overwrite by default. Canonical filenames are
-recorded in [`anygoal/resources/catalog.yaml`](anygoal/resources/catalog.yaml);
-the shared workspace inventory remains in `../unstable-worldmodel/datasets.md`.
+recorded in [`anygoal/resources/catalog.yaml`](anygoal/resources/catalog.yaml).
 
-## Train and evaluate
+## Train
 
-The public CLI resolves an ID and calls the installed AnyGoal runner around the
-original model source without changing model math, hyperparameters, seeds,
-data alignment, or normalization:
+Training needs `uv pip install 'anygoal[all]'`. Make sure you installed models by `anygoal models install --all`. Currently, we support training on the eight models described in the paper.
 
 The exact canonical spellings, accepted aliases, and HDF5 filenames are listed
 in [`scripts/train/training_api_ids.csv`](scripts/train/training_api_ids.csv).
 
 ```bash
+# check the resolved paths with --dry-run before training
 anygoal train driftworld \
   --data "$(anygoal config path data)/pusht_expert_train.h5" \
   --task pusht --dry-run
 
-anygoal train irasim \
-  --data "$(anygoal config path data)/manipulator_insert_peg_weak_expert_train.h5" \
-  --task insert_peg --dry-run
+# remove --dry-run after checking resolved paths
+anygoal train driftworld \
+  --data "$(anygoal config path data)/pusht_expert_train.h5" \
+  --task pusht
 
-anygoal eval rollout \
-  --model driftworld --dataset avoidt --seed 0 --dry-run
-
-anygoal eval planning \
-  --model irasim --dataset cubehop --seed 0 --dry-run
 ```
 
-Remove `--dry-run` after checking resolved paths. Training accepts common
+Training accepts common
 overrides such as `--learning-rate`, `--batch-size`, `--seed`, and
 `--num-workers`; omitted values remain exactly as defined by the selected
 model/task profile. `--task` is always required; when the HDF5 filename or
 metadata identifies the task, AnyGoal also checks that identity against the
-explicit value. Verified profiles cover all four base tasks for LeWM,
-Sensorimotor, PreJEPA, DriftWorld, IRASim, and the three toy predictors. LeWM
-and PreJEPA training on PushT, Cube, or TwoRoom emits a warning because the
+explicit value.
+
+LeWM and PreJEPA training on PushT, Cube, or TwoRoom emits a warning because the
 paper used the official released checkpoints for those combinations.
-Evaluation accepts
-`--checkpoint` and `--model-config`.
-The downloadable AnyGoal artifact inventory is recorded in
-[`anygoal/resources/artifacts.yaml`](anygoal/resources/artifacts.yaml).
 
-## Site and W&B configuration
 
-AnyGoal-owned files share one root while compatible datasets continue to use
-Stable Worldmodel's storage policy:
-
-| Variable | Default |
-| --- | --- |
-| `ANYGOAL_HOME` | `~/.anygoal` |
-| `ANYGOAL_DATA_ROOT` | Stable Worldmodel's `datasets` directory |
-| `ANYGOAL_CHECKPOINT_ROOT` | `$ANYGOAL_HOME/checkpoints` |
-| `ANYGOAL_OUTPUT_ROOT` | `./outputs` |
-| `ANYGOAL_SOURCE_ROOT` | `$ANYGOAL_HOME/sources` |
-| `ANYGOAL_CACHE_ROOT` | `$ANYGOAL_HOME/cache` |
-
-Each specific root overrides the path derived from `ANYGOAL_HOME`. Inspect the
-effective paths without relying on shell-variable expansion:
-
-```bash
-anygoal config path data
-anygoal config path checkpoints
-anygoal config path sources
-```
-
-An optional site configuration can be generated from the package defaults:
-
-```bash
-mkdir -p ~/.config/anygoal
-anygoal config show > ~/.config/anygoal/site.yaml
-```
-
-Configuration precedence is:
-
-```text
-CLI override > experiment config > user/site config > package defaults
-```
-
-The site file centralizes W&B entity/project/mode. Filesystem roots come from
-the environment variables above and are reported as read-only effective values
-by `anygoal config show`.
-
-## Evaluation matrix
-
-[`scripts/analysis/manifest.yaml`](scripts/analysis/manifest.yaml) records the rollout and planning
-matrix without one launcher per combination:
-
-```bash
-anygoal reproduce scripts/analysis/manifest.yaml
-```
-
-The command prints each evaluation command in the matrix for execution by the
-workflow or scheduler chosen by the user.
-
-## Python API and extensions
-
-```python
-import anygoal
-from anygoal import get_registry
-from anygoal.datasets import validate_hdf5
-
-registry = get_registry()
-dataset = registry.dataset("cube_diagonal")
-report = validate_hdf5("/path/to/cube_diagonal_test.h5", dataset_id=dataset.id)
-
-model, result = anygoal.train(
-    "driftworld",
-    data="/path/to/pusht_expert_train.h5",
-    task="pusht",
-)
-```
-
-Planning keeps Stable Worldmodel's model, cost, solver, and policy APIs intact;
-AnyGoal only supplies the registered task evaluation protocol:
-
-```python
-from stable_worldmodel.planning import CEMSolver, GoalMSE, ShootingCostEvaluator
-from stable_worldmodel.policy import PlanConfig, WorldModelPolicy
-
-cost = ShootingCostEvaluator(model=model, objective=GoalMSE())
-solver = CEMSolver(cost=cost, num_samples=300, n_steps=30, device="cuda")
-policy = WorldModelPolicy(
-    solver=solver,
-    config=PlanConfig(horizon=5, receding_horizon=5, action_block=5),
-)
-result = anygoal.plan(
-    policy,
-    data="/path/to/avoidt_test.h5",
-    seed=0,
-)
-```
-
-The planning defaults reproduce the shared evaluation protocol: 50 trials, a
-25-step dataset goal offset, and a 50-step rollout budget. Pass an already
-constructed `world` only when custom Stable Worldmodel environment setup is
-needed. The preserved `anygoal eval planning` commands remain the paper's exact
-model-specific reproduction entry points. `task` is inferred from a canonical
-HDF5 filename or metadata; pass it explicitly for custom or ambiguous data.
-Passing `seed=[0, 1, 2]` returns a dictionary of `PlanningResult` objects keyed
-by evaluation-start sampling seed. Solver randomness remains controlled by the
-caller-built policy.
-
-Open-loop rollout error uses the preserved AnyGoal episode sampling,
-action-block alignment, and model-native error spaces:
-
-```python
-rollout = anygoal.evaluate_rollout(
-    "prejepa",
-    data="/path/to/avoidt_test.h5",
-    checkpoint="/path/to/prejepa_pusht_object.ckpt",
-    seed=[0, 1, 2],
-)
-five_step_mse = rollout[0].five_step_mse
-terminal_25_step_mse = rollout[0].horizons[25].terminal_mse
-```
-
-The default rollout protocol uses three history frames, five environment
-steps per action block, and reports the existing 5-step short error plus
-15- and 25-step autoregressive metrics. Each result records whether its MSE is
-in latent, normalized-state, or normalized-pixel space.
-
-`data` may be a local Stable World-Model HDF5 path or an HDF5 dataset object.
-The returned `model` is the reloaded, evaluation-mode model, while `result`
-records the checkpoint, resolved config, command, and run directory. Common
-arguments use the signature above; model-specific nested options use double
-underscores in Python (for example, `visualization__enabled=False`) or dotted
-`key=value` arguments in the CLI.
-
-Third-party packages can register datasets, models, and visualizers through the
-`anygoal.datasets`, `anygoal.models`, and `anygoal.visualizers` entry-point
-groups. Integrations must preserve upstream licenses and attribution, and must
-not redistribute models, datasets, or checkpoints without permission.
 
 ## License and attribution
 
@@ -397,23 +236,3 @@ The modification and attribution details are recorded in
 [`docs/THIRD_PARTY_NOTICES.md`](docs/THIRD_PARTY_NOTICES.md). Other external
 datasets and official checkpoints are not redistributed by AnyGoal and remain
 available from their original authors.
-
-## Development
-
-```bash
-pytest -q
-pytest -q -m integration
-# On an allocated GPU with canonical datasets/checkpoints/sources:
-pytest -q -m matrix_e2e
-python -m build
-```
-
-The default suite is artifact-free. `integration` uses real environments and
-native components with reduced inputs, while `matrix_e2e` runs all supported
-model/dataset combinations at reduced scale. It is not a paper-reproduction
-suite; details and required environment variables are in
-[`tests/README.md`](tests/README.md).
-
-Model/data integrations may add compatibility tests, but scientific changes to
-losses, preprocessing, action conventions, temporal alignment, solver defaults,
-or seeds require explicit numerical before/after evidence.
