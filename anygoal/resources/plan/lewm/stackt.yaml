@@ -18,6 +18,8 @@ dataset:
 seed: 42
 policy: random
 model_source_root: ${oc.env:LEWM_SOURCE_ROOT,${anygoal.path:sources}/lewm}
+model:
+  action_dim: 2
 
 plan_config:
   horizon: 5

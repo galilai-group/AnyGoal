@@ -31,6 +31,7 @@ from anygoal.envs.insert_peg.env import (
 from anygoal._planning_artifacts import PlanningArtifactRecorder
 from anygoal.paths import dataset_file, resolve_path
 from anygoal.sources import source_path
+from anygoal.wm.checkpoints import compatible_vit_state_dict
 
 
 def _planning_source(cfg: DictConfig) -> Path:
@@ -130,11 +131,9 @@ def load_model(
         for key, value in checkpoint["state_dict"].items()
         if key.startswith("model.")
     }
-    missing, unexpected = model.load_state_dict(state_dict, strict=False)
-    if missing or unexpected:
-        print(
-            f"Checkpoint load: missing={len(missing)}, unexpected={len(unexpected)}"
-        )
+    model.load_state_dict(
+        compatible_vit_state_dict(state_dict, model.state_dict()), strict=True
+    )
     model = model.to(device).eval().requires_grad_(False)
     model.interpolate_pos_encoding = True
     return model

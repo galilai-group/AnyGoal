@@ -9,6 +9,7 @@ import subprocess
 import sys
 from itertools import product
 from dataclasses import asdict
+from importlib.metadata import PackageNotFoundError
 from pathlib import Path
 from typing import Sequence
 
@@ -17,7 +18,7 @@ import yaml
 from anygoal.config import load_config
 from anygoal.collection import collect_from_cli
 from anygoal.datasets.validation import validate_hdf5
-from anygoal.paths import resolve_path
+from anygoal.paths import path_value, resolve_path
 from anygoal.registry import DatasetSpec, ModelSpec, get_registry
 from anygoal.resources import resource_path
 from anygoal.version import __version__
@@ -25,6 +26,14 @@ from anygoal.version import __version__
 
 def _clean_remainder(arguments: Sequence[str]) -> list[str]:
     return [argument for argument in arguments if argument != "--"]
+
+
+def _has_hydra_override(arguments: Sequence[str], key: str) -> bool:
+    for argument in arguments:
+        name = argument.split("=", 1)[0].lstrip("+~")
+        if name == key or key.startswith(name + "."):
+            return True
+    return False
 
 
 def _python_command(target: str) -> list[str]:
@@ -45,14 +54,48 @@ def _hydra_override(config: Path, key: str, value: str) -> str:
     return f"{key}={value}"
 
 
+def _print_dependency_hint() -> None:
+    print(
+        "A required Python module is missing. Check that you installed the "
+        "extra for your task: 'anygoal[data]' for data tools, 'anygoal[eval]' "
+        "for planning/rollout evaluation, or 'anygoal[all]' for all workflows. "
+        "For evaluation, install with: python -m pip install 'anygoal[eval]'. "
+        "If the error persists, check the missing module shown above; "
+        "model-specific source dependencies may need a separate installation.",
+        file=sys.stderr,
+    )
+
+
 def _execute(command: Sequence[str], *, dry_run: bool, cwd: Path | None = None) -> int:
     printable = shlex.join(str(part) for part in command)
     if dry_run:
         print(printable)
         return 0
-    return subprocess.run(
-        [str(part) for part in command], cwd=cwd, check=False
-    ).returncode
+    missing_module = False
+    with subprocess.Popen(
+        [str(part) for part in command],
+        cwd=cwd,
+        stderr=subprocess.PIPE,
+        text=True,
+        errors="replace",
+        bufsize=1,
+    ) as process:
+        for line in process.stderr:
+            sys.stderr.write(line)
+            sys.stderr.flush()
+            if any(
+                marker in line
+                for marker in (
+                    "ModuleNotFoundError:",
+                    "PackageNotFoundError:",
+                    "No module named ",
+                )
+            ):
+                missing_module = True
+        returncode = process.wait()
+    if returncode != 0 and missing_module:
+        _print_dependency_hint()
+    return returncode
 
 
 def _run_collect(args: argparse.Namespace) -> int:
@@ -147,13 +190,35 @@ def _run_eval(args: argparse.Namespace) -> int:
         raise ValueError(
             f"{model.id} does not declare support for {dataset.family} datasets."
         )
+    extra = _clean_remainder(args.arguments)
+    checkpoint_override = _has_hydra_override(extra, model.planning_checkpoint_key)
+    random_policy = "policy=random" in extra
     if args.download:
         from anygoal.artifacts import download_checkpoint, download_dataset
 
         download_dataset(dataset)
-        if args.checkpoint is None:
+        if (
+            args.checkpoint is None
+            and not checkpoint_override
+            and not random_policy
+            and args.model_config is None
+        ):
             args.checkpoint = download_checkpoint(model, dataset)
-    extra = _clean_remainder(args.arguments)
+    if (
+        args.checkpoint is None
+        and args.model_config is None
+        and not checkpoint_override
+        and not random_policy
+    ):
+        from anygoal.artifacts import default_checkpoint_path
+
+        args.checkpoint = default_checkpoint_path(model, dataset)
+        if not args.dry_run and not args.checkpoint.is_file():
+            raise FileNotFoundError(
+                f"Checkpoint not found: {args.checkpoint}. "
+                "Use --download to fetch registered artifacts, or --checkpoint "
+                "to select your own checkpoint."
+            )
     if args.eval_kind == "rollout":
         command = [
             *_python_command(model.rollout_runner),
@@ -176,6 +241,13 @@ def _run_eval(args: argparse.Namespace) -> int:
                 "Pass --model-config when an integration provides one."
             )
         if model.planner_config_style == "hydra":
+            config_content = yaml.safe_load(config.read_text()) or {}
+            if (
+                config_content.get("policy") == "random"
+                and args.model_config is None
+                and not _has_hydra_override(extra, "policy")
+            ):
+                extra.append(f"policy={model.id}")
             command = [
                 *_python_command(model.planner),
                 f"--config-path={config.parent}",
@@ -197,7 +269,7 @@ def _run_eval(args: argparse.Namespace) -> int:
                 )
         if dataset.id in {"avoid_peg", "extractpeg"}:
             extra.append(f"eval.dataset_name={Path(dataset.filename).stem}")
-        if args.checkpoint:
+        if args.checkpoint and not checkpoint_override:
             extra.append(
                 _hydra_override(
                     config,
@@ -272,19 +344,21 @@ def _run_models(args: argparse.Namespace) -> int:
 
 
 def _run_config(args: argparse.Namespace) -> int:
-    config = load_config(site=args.site, experiment=args.config)
-    if args.action == "show":
-        print(yaml.safe_dump(config, sort_keys=False))
+    if args.action == "path":
+        if args.path_name is None:
+            raise ValueError("config path requires a path name.")
+        print(path_value(args.path_name))
         return 0
-    if args.path_name is None:
-        raise ValueError("config path requires a path name.")
-    print(config["paths"][args.path_name])
+    config = load_config(site=args.site, experiment=args.config)
+    print(yaml.safe_dump(config, sort_keys=False))
     return 0
 
 
 def _run_artifacts(args: argparse.Namespace) -> int:
     from anygoal.artifacts import (
         download_all,
+        download_dataset,
+        download_model,
         download_pair,
     )
 
@@ -299,9 +373,14 @@ def _run_artifacts(args: argparse.Namespace) -> int:
     else:
         if args.datasets or args.checkpoints:
             raise ValueError("--datasets and --checkpoints require --all.")
-        if not args.model_id or not args.dataset_id:
-            raise ValueError("Specify both --model and --dataset, or use --all.")
-        downloaded = download_pair(args.model_id, args.dataset_id)
+        if args.model_id and args.dataset_id:
+            downloaded = download_pair(args.model_id, args.dataset_id)
+        elif args.model_id:
+            downloaded = download_model(args.model_id)
+        elif args.dataset_id:
+            downloaded = [download_dataset(args.dataset_id)]
+        else:
+            raise ValueError("Specify --model, --dataset, or use --all.")
     for path in downloaded:
         print(path)
     return 0
@@ -373,7 +452,7 @@ def _parser() -> argparse.ArgumentParser:
         dest="artifacts_command", required=True
     )
     artifacts_download = artifacts_subparsers.add_parser(
-        "download", help="Download one evaluation pair or all published artifacts."
+        "download", help="Download a dataset, model checkpoints, an evaluation pair, or all artifacts."
     )
     artifacts_download.add_argument("--model", dest="model_id")
     artifacts_download.add_argument("--dataset", dest="dataset_id")
@@ -481,6 +560,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return int(args.handler(args))
     except BrokenPipeError:
         return 0
+    except (ModuleNotFoundError, PackageNotFoundError) as error:
+        print(f"{parser.prog}: {error}", file=sys.stderr)
+        _print_dependency_hint()
+        return 1
     except (
         FileExistsError,
         FileNotFoundError,

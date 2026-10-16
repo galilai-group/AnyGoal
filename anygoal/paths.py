@@ -5,7 +5,18 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from stable_worldmodel.data.utils import get_cache_dir
+
+def _stablewm_cache_dir(*, sub_folder: str | None = None) -> Path:
+    """Apply Stable Worldmodel's cache policy without importing its ML stack."""
+    override = os.environ.get("STABLEWM_HOME")
+    root = (
+        Path(override).expanduser()
+        if override
+        else Path.home() / ".stable_worldmodel"
+    )
+    path = root if sub_folder is None else root / sub_folder
+    path.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 def anygoal_home() -> Path:
@@ -15,8 +26,8 @@ def anygoal_home() -> Path:
 
 
 def stablewm_root() -> Path:
-    """Delegate the shared Stable Worldmodel root and its default to upstream."""
-    return get_cache_dir()
+    """Return the shared Stable Worldmodel root."""
+    return _stablewm_cache_dir()
 
 
 def resolve_path(value: str | Path, *, base: str | Path | None = None) -> Path:
@@ -39,7 +50,7 @@ def data_root() -> Path:
     override = os.environ.get("ANYGOAL_DATA_ROOT")
     if override:
         return Path(override).expanduser()
-    return get_cache_dir(sub_folder="datasets")
+    return _stablewm_cache_dir(sub_folder="datasets")
 
 
 def dataset_file(name: str | Path, *, root: str | Path) -> Path:

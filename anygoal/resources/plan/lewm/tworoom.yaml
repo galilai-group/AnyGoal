@@ -12,6 +12,7 @@ seed: 42
 policy: lewm_tworoom
 cache_dir: ${anygoal.path:checkpoints}
 model:
+  action_dim: 2
   checkpoint: ${anygoal.path:checkpoints}/lewm_tworoom.ckpt
 model_source_root: ${oc.env:LEWM_SOURCE_ROOT,${anygoal.path:sources}/lewm}
 

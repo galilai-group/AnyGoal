@@ -25,18 +25,7 @@ policy: cube/lewm # ckpt name or random
 model_source_root: ${oc.env:LEWM_SOURCE_ROOT,${anygoal.path:sources}/lewm}
 model:
   checkpoint: ${anygoal.path:checkpoints}/lewm_cube.ckpt
-  encoder_scale: tiny
-  patch_size: 14
-  embed_dim: 192
-  history_size: 3
   action_dim: 5
-  predictor:
-    depth: 6
-    heads: 16
-    mlp_dim: 2048
-    dim_head: 64
-    dropout: 0.1
-    emb_dropout: 0.0
 
 plan_config:
   horizon: 5
