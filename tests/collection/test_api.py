@@ -1,5 +1,6 @@
 from importlib import import_module
 from inspect import signature
+from pathlib import Path
 from types import SimpleNamespace
 
 import h5py
@@ -37,6 +38,29 @@ def test_python_collection_api_maps_common_episode_count(monkeypatch, tmp_path):
         "seed": 0,
         "episodes_per_goal": 100,
     }
+
+
+def test_python_collection_api_normalizes_string_output(monkeypatch, tmp_path):
+    captured = {}
+
+    def collect_dataset(*, output, reference: Path | None = None, **options):
+        captured["output"] = output
+        captured["reference"] = reference
+        return output
+
+    module = SimpleNamespace(collect_dataset=collect_dataset)
+    monkeypatch.setattr(collection, "import_module", lambda _: module)
+    monkeypatch.setattr(collection, "_stamp_dataset_id", lambda path, _: path)
+
+    output = collection.collect(
+        "cubediagonal",
+        output=str(tmp_path / "cube.h5"),
+        reference=str(tmp_path / "reference.h5"),
+    )
+
+    assert captured["output"] == tmp_path / "cube.h5"
+    assert captured["reference"] == tmp_path / "reference.h5"
+    assert output == (tmp_path / "cube.h5").resolve()
 
 
 def test_python_collection_api_rejects_unbalanced_episode_count():

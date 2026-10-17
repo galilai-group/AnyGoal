@@ -6,7 +6,7 @@ on:
       version:
         description: Version to publish and verify
         required: true
-        default: 0.1.0b3
+        default: 0.1.0b4
         type: string
 
 permissions:

@@ -51,6 +51,11 @@ def collect(dataset: str, num_episodes: int | None = None, **options: Any) -> Pa
         )
     module = import_module(spec.collector)
     options.setdefault("seed", spec.default_seed)
+    annotations = get_type_hints(module.collect_dataset)
+    for name, value in options.items():
+        annotation, _ = _argument_type(annotations.get(name))
+        if value is not None and (name == "output" or annotation is Path):
+            options[name] = Path(value).expanduser()
     if num_episodes is not None:
         name, value = _native_episode_option(spec.id, int(num_episodes))
         if name in options:

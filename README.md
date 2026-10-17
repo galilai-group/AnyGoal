@@ -25,7 +25,7 @@ environment and install the pinned repository requirements:
 pip install uv
 uv venv --python 3.10
 source .venv/bin/activate
-uv pip install "anygoal[eval]==0.1.0b3"
+uv pip install "anygoal[eval]==0.1.0b4"
 anygoal --version
 ```
 

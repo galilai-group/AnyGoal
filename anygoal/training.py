@@ -19,6 +19,7 @@ import hydra
 import torch
 from omegaconf import OmegaConf
 
+from anygoal.config import load_config
 from anygoal.datasets.validation import validate_hdf5
 from anygoal.paths import anygoal_home, checkpoint_root
 from anygoal.registry import DatasetSpec, ModelSpec, get_registry
@@ -173,6 +174,14 @@ class TrainingResult:
     config: Path
     command: tuple[str, ...]
     elapsed_seconds: float
+
+
+def _training_environment(plan: TrainingPlan) -> dict[str, str]:
+    environment = os.environ.copy()
+    environment.update(dict(plan.environment))
+    if not bool(load_config().get("wandb", {}).get("enabled", False)):
+        environment["WANDB_MODE"] = "disabled"
+    return environment
 
 
 def _data_path(data: str | Path | Any) -> Path:
@@ -703,11 +712,9 @@ def train(
     plan.output_root.mkdir(parents=True, exist_ok=True)
     before = _snapshot_checkpoints(plan.output_root)
     started = time.monotonic()
-    environment = os.environ.copy()
-    environment.update(dict(plan.environment))
     subprocess.run(
         plan.command,
-        env=environment,
+        env=_training_environment(plan),
         check=True,
     )
     after = _snapshot_checkpoints(plan.output_root)

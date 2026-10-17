@@ -8,6 +8,7 @@ import torch
 from omegaconf import OmegaConf
 
 from anygoal.training import (
+    _training_environment,
     _warn_for_official_checkpoint_training,
     load_trained_model,
     prepare_training,
@@ -42,6 +43,21 @@ def test_task_is_required(tmp_path):
     data = write_hdf5(tmp_path / "custom.h5")
     with pytest.raises(ValueError, match="task is required"):
         prepare_training("driftworld", data=data, task="")
+
+
+def test_disabled_anygoal_wandb_is_propagated_to_trainer(
+    monkeypatch, tmp_path
+):
+    data = write_hdf5(tmp_path / "custom.h5", environment="swm/PushT-v1")
+    plan = prepare_training("driftworld", data=data, task="pusht")
+    monkeypatch.delenv("WANDB_MODE", raising=False)
+    monkeypatch.setattr(
+        "anygoal.training.load_config", lambda: {"wandb": {"enabled": False}}
+    )
+
+    environment = _training_environment(plan)
+
+    assert environment["WANDB_MODE"] == "disabled"
 
 
 def test_explicit_task_must_match_inferred_identity(tmp_path):
