@@ -12,6 +12,8 @@ trove-classifiers==2026.9.21.13
 wheel==0.45.1
 
 # Additional transitive packages required by the resolved standalone install.
+# Newer googleapis-common-protos requires protobuf>=6.33.5, beyond this baseline.
+googleapis-common-protos==1.72.0
 accelerate==1.15.0
 aiofiles==25.1.0
 asttokens==3.0.2

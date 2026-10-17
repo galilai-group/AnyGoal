@@ -3,7 +3,7 @@ set -euo pipefail
 export UV_LINK_MODE=copy
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-python_command="${PYTHON:-python}"
+python_command="${PYTHON:-$(command -v python)}"
 work_dir="$(mktemp -d "${TMPDIR:-/tmp}/anygoal-dist-smoke.XXXXXX")"
 trap 'rm -rf "${work_dir}"' EXIT
 
