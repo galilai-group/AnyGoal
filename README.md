@@ -2,7 +2,7 @@
 ## AnyGoal: On World Model Generalization Beyond Expert Rollouts
 by [Heejeong Nam](https://hazel-heejeong-nam.github.io/), [Divyat Mahajan](https://divyat09.github.io/), [Quentin Le Lidec](https://quentinll.github.io/), [Randall Balestriero](https://randallbalestriero.github.io/), [David Klindt](https://scholar.google.de/citations?user=EpT-nUAAAAAJ&hl=en).
 
-
+[https://arxiv.org/pdf/2610.26844](https://arxiv.org/pdf/2610.26844)
 
 AnyGoal is a benchmark for testing compositional generalization of world models.
 It extends
