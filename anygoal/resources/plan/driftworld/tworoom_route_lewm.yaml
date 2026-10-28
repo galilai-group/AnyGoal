@@ -16,6 +16,7 @@ model:
 
 dataset:
   root: ${anygoal.path:data}
+  stats: tworoom
   keys_to_cache: [action, proprio]
 
 world:

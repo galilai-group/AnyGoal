@@ -61,6 +61,13 @@ def dataset_path(cfg: DictConfig) -> Path:
     return dataset_file(str(cfg.eval.dataset_name), root=cfg.dataset.root)
 
 
+def stats_dataset_path(cfg: DictConfig) -> Path:
+    return dataset_file(
+        str(cfg.dataset.get("action_stats_name", cfg.eval.dataset_name)),
+        root=cfg.dataset.root,
+    )
+
+
 def validate_config(cfg: DictConfig) -> None:
     if int(cfg.plan_config.horizon) * int(cfg.plan_config.action_block) > int(
         cfg.eval.eval_budget
@@ -81,6 +88,7 @@ def validate_config(cfg: DictConfig) -> None:
         for path in (
             Path(cfg.model.checkpoint).expanduser(),
             dataset_path(cfg),
+            stats_dataset_path(cfg),
             Path(cfg.model.scheduler_path).expanduser(),
         )
         if not path.exists()

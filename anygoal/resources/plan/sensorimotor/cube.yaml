@@ -8,6 +8,7 @@ model:
 
 dataset:
   root: ${anygoal.path:data}
+  stats: cube_single_expert
   keys_to_cache: [action]
 
 world:

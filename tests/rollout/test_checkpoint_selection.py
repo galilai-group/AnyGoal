@@ -41,6 +41,7 @@ def test_object_checkpoint_override_reaches_loader(name, task, monkeypatch, tmp_
         return Model()
 
     monkeypatch.setattr(rollout, "fit_processor", lambda *_: object())
+    monkeypatch.setattr(rollout, "load_stats_dataset", lambda _cfg, dataset, _keys: dataset)
     monkeypatch.setattr(rollout, "LatentARRolloutAdapter", lambda **kwargs: kwargs)
     monkeypatch.setattr(rollout, "PreJEPARolloutAdapter", lambda **kwargs: kwargs)
     monkeypatch.setitem(

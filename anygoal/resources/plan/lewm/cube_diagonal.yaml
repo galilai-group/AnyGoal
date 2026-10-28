@@ -19,7 +19,7 @@ world:
   evaluation_cube_position_tolerance: 0.04
 
 dataset:
-  stats: ${eval.dataset_name}
+  stats: cube_single_expert
   keys_to_cache: [action]
 
 seed: 0

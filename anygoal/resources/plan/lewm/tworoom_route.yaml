@@ -17,7 +17,7 @@ model:
 model_source_root: ${oc.env:LEWM_SOURCE_ROOT,${anygoal.path:sources}/lewm}
 
 dataset:
-  stats: ${eval.dataset_name}
+  stats: tworoom
   keys_to_cache: [action, proprio]
 
 plan_config:
