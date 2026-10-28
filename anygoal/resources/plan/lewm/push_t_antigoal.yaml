@@ -9,7 +9,7 @@ world:
   max_episode_steps: ???
 
 dataset:
-  stats: ${eval.dataset_name}
+  stats: pusht_expert_train
   keys_to_cache:
     - action
     - proprio

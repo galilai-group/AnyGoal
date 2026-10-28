@@ -15,6 +15,7 @@ model:
 
 dataset:
   root: ${anygoal.path:data}
+  stats: manipulator_insert_peg_weak_expert_train
   keys_to_cache: [action]
 
 world:

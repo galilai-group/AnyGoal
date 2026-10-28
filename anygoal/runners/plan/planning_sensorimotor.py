@@ -218,6 +218,12 @@ def dataset_path(cfg: DictConfig) -> Path:
     return dataset_file(str(cfg.eval.dataset_name), root=cfg.dataset.root)
 
 
+def stats_dataset_path(cfg: DictConfig) -> Path:
+    return dataset_file(
+        str(cfg.dataset.get("stats", cfg.eval.dataset_name)), root=cfg.dataset.root
+    )
+
+
 def required_paths(cfg: DictConfig, seed: int) -> list[Path]:
     run_directory = resolve_run_directory(cfg, seed)
     train_config_path = resolve_path(
@@ -231,6 +237,7 @@ def required_paths(cfg: DictConfig, seed: int) -> list[Path]:
         train_config_path,
         checkpoint_path,
         dataset_path(cfg),
+        stats_dataset_path(cfg),
     ]
 
 
@@ -259,6 +266,10 @@ def evaluate(cfg: DictConfig, seed: int) -> Path:
 
     dataset = swm.data.HDF5Dataset(
         path=dataset_path(cfg),
+        keys_to_cache=list(cfg.dataset.keys_to_cache),
+    )
+    stats_dataset = swm.data.HDF5Dataset(
+        path=stats_dataset_path(cfg),
         keys_to_cache=list(cfg.dataset.keys_to_cache),
     )
     episodes, start_steps = sample_start_indices(
@@ -299,7 +310,7 @@ def evaluate(cfg: DictConfig, seed: int) -> Path:
     policy = swm.policy.WorldModelPolicy(
         solver=solver,
         config=swm.PlanConfig(**OmegaConf.to_container(cfg.plan_config, resolve=True)),
-        process=fit_processors(dataset, list(cfg.dataset.keys_to_cache)),
+        process=fit_processors(stats_dataset, list(cfg.dataset.keys_to_cache)),
         transform={
             "pixels": image_transform(int(cfg.eval.img_size)),
             "goal": image_transform(int(cfg.eval.img_size)),

@@ -1,6 +1,6 @@
 [project]
 name = "anygoal"
-version = "0.1.0b4"
+version = "0.1.0"
 description = "Benchmarking state-action recombination in world models"
 readme = "README.md"
 license = "Apache-2.0"
@@ -76,7 +76,7 @@ eval = [
 ]
 
 all = [
-    "anygoal[eval]==0.1.0b4",
+    "anygoal[eval]==0.1.0",
     "stable-worldmodel[train,env]==0.1.1",
     "accelerate==1.15.0",
 ]

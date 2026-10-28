@@ -372,9 +372,9 @@ def evaluate(cfg: DictConfig, model_loader=load_cost_model):
     }
 
     dataset = get_dataset(cfg, cfg.eval.dataset_name)
-    stats_dataset = dataset  # get_dataset(cfg, cfg.dataset.stats)
+    stats_dataset = get_dataset(cfg, cfg.dataset.get("stats", cfg.eval.dataset_name))
     col_name = "episode_idx" if "episode_idx" in dataset.column_names else "ep_idx"
-    ep_indices, _ = np.unique(stats_dataset.get_col_data(col_name), return_index=True)
+    ep_indices, _ = np.unique(dataset.get_col_data(col_name), return_index=True)
 
     process = {}
     for col in cfg.dataset.keys_to_cache:

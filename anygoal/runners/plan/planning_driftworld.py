@@ -54,6 +54,12 @@ def dataset_path(cfg: DictConfig) -> Path:
     return dataset_file(str(cfg.eval.dataset_name), root=cfg.dataset.root)
 
 
+def stats_dataset_path(cfg: DictConfig) -> Path:
+    return dataset_file(
+        str(cfg.dataset.get("stats", cfg.eval.dataset_name)), root=cfg.dataset.root
+    )
+
+
 def validate_config(cfg: DictConfig) -> None:
     if int(cfg.plan_config.horizon) * int(cfg.plan_config.action_block) > int(
         cfg.eval.eval_budget
@@ -68,6 +74,7 @@ def validate_config(cfg: DictConfig) -> None:
         for path in (
             Path(cfg.model.checkpoint).expanduser(),
             dataset_path(cfg),
+            stats_dataset_path(cfg),
         )
         if not path.is_file()
     ]
@@ -169,8 +176,11 @@ def evaluate(cfg: DictConfig) -> Path:
     np.random.seed(policy_seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dataset = get_dataset(cfg)
+    stats_dataset = swm.data.HDF5Dataset(
+        path=stats_dataset_path(cfg), keys_to_cache=["action"]
+    )
     action_processor = DriftWorldActionProcessor.fit(
-        dataset.get_col_data("action")
+        stats_dataset.get_col_data("action")
     )
     model, checkpoint_step = load_model(cfg, device, action_processor)
     if dataset.get_dim("action") != model.action_dim:

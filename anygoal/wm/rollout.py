@@ -19,7 +19,7 @@ from anygoal.evaluation._rollout_adapters import (
     TrueStateRolloutAdapter,
     imagenet_preprocess,
 )
-from anygoal.paths import dataset_file, resolve_path
+from anygoal.paths import data_root, dataset_file, resolve_path
 from anygoal.resources import resource_path
 from anygoal.sources import source_path
 
@@ -30,6 +30,18 @@ def fit_processor(dataset, key: str) -> StandardScaler:
     if not len(values):
         raise ValueError(f"No finite values available to fit processor for {key!r}.")
     return StandardScaler().fit(values)
+
+
+def load_stats_dataset(cfg: DictConfig, dataset, keys: list[str]):
+    stats_name = cfg.dataset.get("stats", cfg.dataset.get("action_stats_name"))
+    if not stats_name:
+        return dataset
+    return swm.data.HDF5Dataset(
+        path=dataset_file(
+            str(stats_name), root=cfg.dataset.get("root", str(data_root()))
+        ),
+        keys_to_cache=keys,
+    )
 
 
 def load_planning_config(path: str | Path) -> DictConfig:
@@ -63,8 +75,6 @@ def build_adapter(
     history_length: int,
 ):
     """Build an adapter for the installed rollout runner and public API."""
-    action_processor = fit_processor(dataset, "action")
-
     if model_name == "lewm":
         from anygoal.runners.plan.planning import (
             patch_loaded_model_compat,
@@ -74,6 +84,9 @@ def build_adapter(
 
         cfg = load_planning_config(
             planning_config_override or model_cfg.planning_config
+        )
+        action_processor = fit_processor(
+            load_stats_dataset(cfg, dataset, ["action"]), "action"
         )
         checkpoint = checkpoint_override or resolve_path(model_cfg.checkpoint)
         checkpoint_root = checkpoint.parent
@@ -107,6 +120,9 @@ def build_adapter(
 
         cfg = load_planning_config(
             planning_config_override or model_cfg.planning_config
+        )
+        action_processor = fit_processor(
+            load_stats_dataset(cfg, dataset, ["action"]), "action"
         )
         if run_directory_override is not None:
             run_directory = run_directory_override
@@ -167,8 +183,14 @@ def build_adapter(
         model = load_prejepa_cost_model(cfg, checkpoint_root)
         patch_loaded_model_compat(model)
         model = model.to(device).eval().requires_grad_(False)
+        processor_keys = [
+            "action",
+            *[key for key in model.extra_encoders if key != "action"],
+        ]
+        stats_dataset = load_stats_dataset(cfg, dataset, processor_keys)
+        action_processor = fit_processor(stats_dataset, "action")
         processors = {
-            key: fit_processor(dataset, key)
+            key: fit_processor(stats_dataset, key)
             for key in model.extra_encoders
             if key != "action"
         }
@@ -241,8 +263,9 @@ def build_adapter(
         )
         checkpoint = checkpoint_override or resolve_path(model_cfg.checkpoint)
         cfg.model.checkpoint = str(checkpoint)
+        stats_dataset = load_stats_dataset(cfg, dataset, ["action"])
         driftworld_action_processor = DriftWorldActionProcessor.fit(
-            dataset.get_col_data("action")
+            stats_dataset.get_col_data("action")
         )
         model, checkpoint_step = load_model(
             cfg, device, driftworld_action_processor
